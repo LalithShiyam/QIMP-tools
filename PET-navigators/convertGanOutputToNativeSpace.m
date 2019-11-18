@@ -30,7 +30,7 @@ path2ConvFolder=[CGONinputs.where2Store,filesep,convertedFolder];
 cd(CGONinputs.path2GanNifti);
 niftiFiles=dir('*.nii');
 cropRange=44;
-parfor lp=1:length(niftiFiles)
+for lp=1:length(niftiFiles)
     imgVol=niftiread(niftiFiles(lp).name);
     xMax=344;
     yMax=344;
@@ -40,7 +40,7 @@ end
 
 cd(CGONinputs.path2OrgNifti)
 orgNiftiFiles=dir('*.nii');
-parfor lp=1:length(orgNiftiFiles)
+for lp=1:length(orgNiftiFiles)
     cd(CGONinputs.path2OrgNifti)
     NativeFileName=['PET-Nav-',orgNiftiFiles(lp).name]; 
     nativeVolumes=niftiread(orgNiftiFiles(lp).name);
