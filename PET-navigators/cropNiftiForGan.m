@@ -26,7 +26,7 @@ function [] = cropNiftiForGan(CNGinputs)
 % create the folder where the cropped images will be stored.
 
 cd(CNGinputs.where2Store)
-splitFiles=regexp(CNGinputs.where2Store,filesep,'split');
+splitFiles=regexp(CNGinputs.path2Nifti,filesep,'split');
 convertedFolder=[splitFiles{end},'-','cropped'];
 mkdir(convertedFolder); % creating the converted folder for storing
 path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
