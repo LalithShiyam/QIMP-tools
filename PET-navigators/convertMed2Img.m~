@@ -33,20 +33,21 @@ where2Store=[where2Store,filesep,convertedFolder];
 
 % Find out the format of the medical images: Dicom, nifti or analyze.
 medFormat=checkFileFormat(path2MedImg);
+cd(path2MedImg)
 switch medFormat
     case 'Analyze'
         medFiles=dir('*hdr')
         for lp=1:length(medFiles)
-            medImg{lp}=analyze75read(fileName);
+            medImg{lp}=analyze75read(medFiles(lp).name);
         end
     case 'Nifti'
-            medImg=niftiread(path2MedImg);
-            
-            medImg=im2double(medImg);
+        medFiles=dir('*nii')
+        for lp=1:length(medFiles)
+            medImg{lp}=niftiread(medFiles(lp).name);
+        end
+end
 
-
-
-
+for olp=1:length(medImg)
 for lp=1:size(medImg,3)
     pngImg=mat2gray(medImg(:,:,lp)); 
     pngFileName=[uID,'-',num2str(lp),'.',fileFormat];

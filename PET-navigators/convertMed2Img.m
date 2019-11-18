@@ -47,13 +47,15 @@ switch medFormat
         end
 end
 
-medImg=im2double(medImg);
-
-for lp=1:size(medImg,3)
-    pngImg=mat2gray(medImg(:,:,lp)); 
-    pngFileName=[uID,'-',num2str(lp),'.',fileFormat];
-    imwrite(pngImg,pngFileName)
-    disp(['Writing slice number ',num2str(lp),'...']);
-    movefile(pngFileName,where2Store)
-    disp(['Moving ',pngFileName,' to ',where2Store])
+for olp=1:length(medImg)
+    disp(['Processing ',medFiles(olp).name,'...']);
+    tempImg=medImg{olp};
+    for lp=1:size(tempImg,3)
+        pngImg=mat2gray(tempImg(:,:,lp)); 
+        pngFileName=[uID,'-',num2str(lp),'.',fileFormat];
+        imwrite(pngImg,pngFileName)
+        disp(['Writing slice number ',num2str(lp),'...']);
+        movefile(pngFileName,where2Store)
+        disp(['Moving ',pngFileName,' to ',where2Store])
+    end
 end
