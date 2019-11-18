@@ -31,6 +31,8 @@ cd(CNGinputs.path2Nifti)
 niftiFiles=dir('*.nii');
 cropRange=44; %pixels)
 for lp=1:length(niftiFiles)
+cropRange=44;
+parfor lp=1:length(niftiFiles)
     hdrInfo=niftiinfo(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
     croppedFileName=['crpd-',niftiFiles(lp).name];
