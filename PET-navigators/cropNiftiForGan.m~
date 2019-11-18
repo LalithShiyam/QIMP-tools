@@ -21,12 +21,14 @@
 %------------------------------------------------------------------------%
 %                           Program start
 %------------------------------------------------------------------------%
+function [] = cropNiftiForGan(CNGinputs)
 
 % create the folder where the cropped images will be stored.
 
 cd(CNGinputs.where2Store)
 splitFiles=regexp(CNGinputs.where2Store,filesep,'split');
 convertedFolder=[splitFiles{end},'-','cropped'];
+mkdir(convertedFolder); % creating the converted folder for
 path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 
 % load the nifti files.
@@ -37,15 +39,21 @@ cropRange=44;
 for lp=1:length(niftiFiles)
     hdrInfo=niftiinfo(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
-    hdrInfo.Filename=['crpd-',niftiFiles(lp).name];
+    croppedFileName=['crpd-',niftiFiles(lp).name];
+    hdrInfo.Filename=croppedFileName;
+    hdrInfo.ImageSize=[256 256 128];
     imgVol=niftiread(niftiFiles(lp).name);
     croppedVol=imgVol;
     xMax=size(imgVol,1);
     yMax=size(imgVol,2);
     zMax=size(imgVol,3);
-    croppedVol=croppedVol(cropRange+1:end,xMax-cropRange,cropRange+1:end,yMax-cropRange,:);
+    croppedVol=croppedVol(cropRange+1:xMax-cropRange,cropRange+1:yMax-cropRange,:);
     emptySlice=zeros(size(croppedVol(:,:,1)));
     croppedVol(:,:,zMax+1)=emptySlice;
+    niftiwrite(croppedVol,croppedFileName,hdrInfo);
+    disp(['Writing ',croppedFileName,'...']);
+    movefile(croppedFileName,path2ConvFolder);
 end
 
 
+end
