@@ -28,6 +28,7 @@ function [] = cropNiftiForGan(CNGinputs)
 cd(CNGinputs.where2Store)
 splitFiles=regexp(CNGinputs.where2Store,filesep,'split');
 convertedFolder=[splitFiles{end},'-','cropped'];
+mkdir(convertedFolder);
 path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 
 % load the nifti files.
