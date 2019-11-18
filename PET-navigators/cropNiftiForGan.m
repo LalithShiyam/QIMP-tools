@@ -1,11 +1,5 @@
-% % This function converts images in medical imaging formats (Nifti or
-% Analyze) to commercially usable formats (JPG, PNG)
-% 
-% Note: The code was developed internally to nifti images to GAN
-% compatible sizes (256 x 256 x 128). Therefore, the code expects at
-% somepoint the inherent matrix size of the pet system (344 x 344 x 127).
-% Therefore, it is a limitation. But this can be easily overcome with some
-% modification.
+% This function converts native Nifti files to cropped Nifti files which
+% are compatible for GANs (256 x 256 x 128)
 %
 % Author : Lalith Kumar Shiyam Sundar
 % Date   : 18 November, 2019
@@ -35,7 +29,7 @@ path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 
 cd(CNGinputs.path2Nifti)
 niftiFiles=dir('*.nii');
-cropRange=44;
+cropRange=44; %pixels)
 for lp=1:length(niftiFiles)
     hdrInfo=niftiinfo(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
