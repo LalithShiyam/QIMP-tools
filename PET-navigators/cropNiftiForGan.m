@@ -36,7 +36,7 @@ path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 cd(CNGinputs.path2Nifti)
 niftiFiles=dir('*.nii');
 cropRange=44;
-for lp=1:length(niftiFiles)
+parfor lp=1:length(niftiFiles)
     hdrInfo=niftiinfo(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
     croppedFileName=['crpd-',niftiFiles(lp).name];
