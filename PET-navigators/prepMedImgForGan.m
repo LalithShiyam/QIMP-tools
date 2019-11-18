@@ -12,28 +12,28 @@
 % Date   : 18 November, 2019
 %
 % Inputs: 
-%       [1]CMIinputs.path2MedImg: file path to the medical image.
-%       [2]CMIinputs.uID: string to be attached to the written images.
-%       [3]CMIinputs.where2Store: file path to store the generated images.
-%       [4]CMIinputs.fileFormat: 'jpg' or 'png'.
-%
+%       [1]PMIGinputs.path2MedImg: file path to the medical image.
+%       [2]PMIGinputs.where2Store: file path to store the generated images.
+%       [3]PMIGinputs.fileFormat: 'jpg' or 'png'.
+%       [4]PMIGinputs.GanType: '2d' or '3d'.
 % Outputs: Folder containing the converted images. 
 %
-% Usage: convertMed2Img(CMIinputs);
+% Usage: prepMedImgForGan(PMIGinputs);
 %       
 %------------------------------------------------------------------------%
 %                           Program start
 %------------------------------------------------------------------------%
 
-function [] = convertMed2Img(CMIinputs)
-path2MedImg=CMIinputs.path2MedImg;
-uID=CMIinputs.uID;
-where2Store=CMIinputs.where2Store;
-fileFormat=CMIinputs.fileFormat;
+function [] = prepMedImgForGan(PMIGinputs)
+path2MedImg=PMIGinputs.path2MedImg;
+where2Store=PMIGinputs.where2Store;
+fileFormat=PMIGinputs.fileFormat;
 
 % Create the folder to store the converted images.
 splitFiles=regexp(path2MedImg,filesep,'split')
 convertedFolder=[splitFiles{end},'-',fileFormat];
+cd(where2Store)
+mkdir(convertedFolder);
 where2Store=[where2Store,filesep,convertedFolder];
 
 
@@ -56,9 +56,10 @@ end
 for olp=1:length(medImg)
     disp(['Processing ',medFiles(olp).name,'...']);
     tempImg=medImg{olp};
-    for lp=1:size(tempImg,3)
-        pngImg=mat2gray(tempImg(:,:,lp)); 
-        pngFileName=[uID,'-',num2str(lp),'.',fileFormat];
+    [ganCmpImg]=makeImgGanCompatabile(tempImg,PMIGinputs);
+    parfor lp=1:size(ganCmpImg,3)
+        pngImg=mat2gray(ganCmpImg(:,:,lp)); 
+        pngFileName=[medFiles(olp).name,'-',num2str(lp),'.',fileFormat];
         imwrite(pngImg,pngFileName)
         disp(['Writing slice number ',num2str(lp),'...']);
         movefile(pngFileName,where2Store)
@@ -68,5 +69,19 @@ end
 
 end
 
-function [
+function [ganCmpImg]=makeImgGanCompatabile(imgVol,PMIGinputs)
+    cropMargin=44;
+    ganCmpImg=imgVol;
+    xMax=size(imgVol,1);
+    yMax=size(imgVol,2);
+    zMax=size(imgVol,3);
+    if strcmp(PMIGinputs.ganType,'2d') % 256 x 256 x 127
+       ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);
+    end
+    if strcmp(PMIGinputs.ganType,'3d') % Output = 256 x 256 x 128
+       ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);
+       slice2Add=zeros(size(ganCmpImg(:,:,1))); 
+       ganCmpImg(:,:,zMax+1)=slice2Add;
+    end
+end
 
