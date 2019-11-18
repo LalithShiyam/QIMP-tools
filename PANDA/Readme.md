@@ -1,1 +1,1 @@
-![Panda-logo](..Images/Panda-logo.png)
+![Panda-logo](Images/Panda-logo.png)
