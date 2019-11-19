@@ -80,6 +80,8 @@ function [ganCmpImg]=makeImgGanCompatabile(imgVol)
 
 % Hard-coded variables
     cropMargin=44;
+    
+    
     ganCmpImg=imgVol;
     xMax=size(imgVol,1);
     yMax=size(imgVol,2);
