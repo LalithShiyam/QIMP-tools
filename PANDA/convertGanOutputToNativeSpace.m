@@ -16,6 +16,15 @@
 %                               Program start
 %------------------------------------------------------------------------%
 function []= convertGanOutputToNativeSpace(CGONinputs)
+
+% Hard-coded variables: to be changed according to needs.
+
+    xMax=344; % x dimension
+    yMax=344; % y dimension
+    zMax=127; % z dimension
+    padRange=44; % padding
+
+
 % create the folder where the cropped images will be stored.
 
 cd(CGONinputs.where2Store)
@@ -29,12 +38,8 @@ path2ConvFolder=[CGONinputs.where2Store,filesep,convertedFolder];
 
 cd(CGONinputs.path2GanNifti);
 niftiFiles=dir('*.nii');
-cropRange=44;
 for lp=1:length(niftiFiles)
     imgVol=niftiread(niftiFiles(lp).name);
-    xMax=344;
-    yMax=344;
-    zMax=127;
     newVol{lp}=imgVol(:,:,1:zMax);
 end
 
@@ -44,7 +49,7 @@ for lp=1:length(orgNiftiFiles)
     cd(CGONinputs.path2OrgNifti)
     NativeFileName=['PET-Nav-',orgNiftiFiles(lp).name]; 
     nativeVolumes=niftiread(orgNiftiFiles(lp).name);
-    nativeVolumes(cropRange+1:xMax-cropRange,cropRange+1:yMax-cropRange,:)=newVol{lp};
+    nativeVolumes(padRange+1:xMax-padRange,padRange+1:yMax-padRange,:)=newVol{lp};
     hdrInfo=niftiinfo(orgNiftiFiles(lp).name);
     hdrInfo.Description='GAN derived PET navigators';
     niftiwrite(nativeVolumes,NativeFileName,hdrInfo);
