@@ -19,7 +19,8 @@ function [] = cropNiftiForGan(CNGinputs)
 
 % Hard-coded variables.
 
-xyzDim=[256 256 128];
+xyzDim=[256 256 128]; % dimensions to be cropped
+cropRange=44;  % crop region 
 
 % create the folder where the cropped images will be stored.
 
@@ -33,7 +34,6 @@ path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 
 cd(CNGinputs.path2Nifti)
 niftiFiles=dir('*.nii');
-cropRange=44;
 parfor lp=1:length(niftiFiles)
     hdrInfo=niftiinfo(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
