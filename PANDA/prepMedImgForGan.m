@@ -15,7 +15,7 @@
 %       [1]PMIGinputs.path2MedImg: file path to the medical image.
 %       [2]PMIGinputs.where2Store: file path to store the generated images.
 %       [3]PMIGinputs.fileFormat: 'jpg' or 'png'.
-%       [4]PMIGinputs.GanType: '2d' or '3d'.
+%
 % Outputs: Folder containing the converted images. 
 %
 % Usage: prepMedImgForGan(PMIGinputs);
@@ -25,11 +25,13 @@
 %------------------------------------------------------------------------%
 
 function [] = prepMedImgForGan(PMIGinputs)
+
 path2MedImg=PMIGinputs.path2MedImg;
 where2Store=PMIGinputs.where2Store;
 fileFormat=PMIGinputs.fileFormat;
 
 % Create the folder to store the converted images.
+
 splitFiles=regexp(path2MedImg,filesep,'split')
 convertedFolder=[splitFiles{end},'-',fileFormat];
 cd(where2Store)
@@ -38,6 +40,7 @@ where2Store=[where2Store,filesep,convertedFolder];
 
 
 % Find out the format of the medical images: Dicom, nifti or analyze.
+
 medFormat=checkFileFormat(path2MedImg);
 cd(path2MedImg)
 switch medFormat
@@ -69,19 +72,14 @@ end
 
 end
 
-function [ganCmpImg]=makeImgGanCompatabile(imgVol,PMIGinputs)
+function [ganCmpImg]=makeImgGanCompatabile(imgVol)
+
+% Hard-coded variables
     cropMargin=44;
+    
     ganCmpImg=imgVol;
     xMax=size(imgVol,1);
     yMax=size(imgVol,2);
-    zMax=size(imgVol,3);
-    if strcmp(PMIGinputs.ganType,'2d') % 256 x 256 x 127
-       ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);
-    end
-    if strcmp(PMIGinputs.ganType,'3d') % Output = 256 x 256 x 128
-       ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);
-       slice2Add=zeros(size(ganCmpImg(:,:,1))); 
-       ganCmpImg(:,:,zMax+1)=slice2Add;
-    end
+    ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);    
 end
 
