@@ -56,6 +56,8 @@ switch medFormat
         end
 end
 
+% converting the medical image (nifti or analyze) to jpg/png.
+
 for olp=1:length(medImg)
     disp(['Processing ',medFiles(olp).name,'...']);
     tempImg=medImg{olp};
@@ -72,11 +74,12 @@ end
 
 end
 
+% Local function 
+
 function [ganCmpImg]=makeImgGanCompatabile(imgVol)
 
 % Hard-coded variables
     cropMargin=44;
-    
     ganCmpImg=imgVol;
     xMax=size(imgVol,1);
     yMax=size(imgVol,2);
