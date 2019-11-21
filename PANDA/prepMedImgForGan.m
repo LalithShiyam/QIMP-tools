@@ -64,6 +64,7 @@ for olp=1:length(medImg)
     parfor lp=1:size(tempImg,3)
         pngImg=mat2gray(tempImg(:,:,lp)); 
         pngFileName=[medFiles(olp).name,'-',num2str(lp),'.',fileFormat];
+        pngFileName=strrep(pngFileName,' ','_');
         imwrite(pngImg,pngFileName)
         disp(['Writing slice number ',num2str(lp),'...']);
         movefile(pngFileName,where2Store)
