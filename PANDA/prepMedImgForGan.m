@@ -61,9 +61,8 @@ end
 for olp=1:length(medImg)
     disp(['Processing ',medFiles(olp).name,'...']);
     tempImg=medImg{olp};
-    [ganCmpImg]=makeImgGanCompatabile(tempImg,PMIGinputs);
-    parfor lp=1:size(ganCmpImg,3)
-        pngImg=mat2gray(ganCmpImg(:,:,lp)); 
+    parfor lp=1:size(tempImg,3)
+        pngImg=mat2gray(tempImg(:,:,lp)); 
         pngFileName=[medFiles(olp).name,'-',num2str(lp),'.',fileFormat];
         imwrite(pngImg,pngFileName)
         disp(['Writing slice number ',num2str(lp),'...']);
@@ -72,19 +71,5 @@ for olp=1:length(medImg)
     end
 end
 
-end
-
-% Local function 
-
-function [ganCmpImg]=makeImgGanCompatabile(imgVol)
-
-% Hard-coded variables
-    cropMargin=44;
-    
-    
-    ganCmpImg=imgVol;
-    xMax=size(imgVol,1);
-    yMax=size(imgVol,2);
-    ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);    
 end
 
