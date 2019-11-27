@@ -2,4 +2,4 @@
 
 # PANDA: PET nAvigators usiNg Deep leArning
 
-PANDA pipeline, is a computational toolbox for generating PET navigators using Generative Adversarial networks.
+PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks.
