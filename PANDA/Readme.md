@@ -3,3 +3,22 @@
 # PANDA: PET nAvigators usiNg Deep leArning
 
 PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks.
+
+# Requirements
+
+- MATLAB R2016a or higher
+- SPM 12
+
+# MATLAB scripts and their function
+
+- checkFileFormat.m : Checks the format of the medical images in a given folder, the output is a string which says if the folder contains 'Dicom', 'Nifti' or 'Analyze'.
+
+- convertDicomtoNii.m: Converts the Dicom series in a folder to nifti files, using SPM.
+
+- cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 128 (U-net dependency)
+
+- prepMedImgForGan.m.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
+
+- prepDataForTraining.m: A lazy function which i wrote for sorting the converted 2D png or jpg images into 'test','train', and 'val' (validation) folders. The ratio is automatically defined: 60% of total datasets for training, 20% for testing and 20% validation.
+
+- convertGanOutputToNativeSpace.m: Converts GAN Nifti files to native Nifti files which are compatible for image registration (344 x 344 x 127).
