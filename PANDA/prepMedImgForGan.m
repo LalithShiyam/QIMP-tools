@@ -63,7 +63,7 @@ for olp=1:length(medImg)
     tempImg=medImg{olp};
     switch sliceOrientation
         case 'a' % axial
-            tempImg=tempImg;
+            continue
         case 's' % sagittal
             tempImg=flip(permute(tempImg, [3 1 2 4]),1); 
         case 'c' % coronal
