@@ -66,9 +66,9 @@ for olp=1:length(medImg)
             tempImg=tempImg;
         case 's' % sagittal
             tempImg=flip(permute(tempImg, [3 1 2 4]),1); 
-        case 'c' % coronal
-            tempImg=flip(permute(tempImg, [3 2 1 4]),1);
-    end
+        case 'c'
+            tempImg=flip(permute(tempImg, [3 2 1 4]
+            
     parfor lp=1:size(tempImg,3)
         pngImg=mat2gray(tempImg(:,:,lp)); 
         pngFileName=[medFiles(olp).name,'-',num2str(lp),'.',fileFormat];
