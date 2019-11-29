@@ -17,7 +17,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 - cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 128 (U-net dependency)
 
-- prepMedImgForGan.m.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
+- prepMedImgForGan.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
 
 - prepDataForTraining.m: A lazy function which i wrote for sorting the converted 2D png or jpg images into 'test','train', and 'val' (validation) folders. The ratio is automatically defined: 60% of total datasets for training, 20% for testing and 20% validation.
 
