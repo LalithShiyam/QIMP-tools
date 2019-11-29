@@ -29,14 +29,14 @@ function [] = prepMedImgForGan(PMIGinputs)
 path2MedImg=PMIGinputs.path2MedImg;
 where2Store=PMIGinputs.where2Store;
 fileFormat=PMIGinputs.fileFormat;
-
+sliceOrientation=PMIGinputs.sliceOrientation;
 % Create the folder to store the converted images.
 
 splitFiles=regexp(path2MedImg,filesep,'split')
 convertedFolder=[splitFiles{end},'-',fileFormat];
 cd(where2Store)
 mkdir(convertedFolder);
-where2Store=[where2Store,filesep,convertedFolder,sliceOrientation];
+where2Store=[where2Store,filesep,convertedFolder];
 
 
 % Find out the format of the medical images: Dicom, nifti or analyze.
