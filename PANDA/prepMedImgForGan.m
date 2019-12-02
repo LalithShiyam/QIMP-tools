@@ -15,6 +15,8 @@
 %       [1]PMIGinputs.path2MedImg: file path to the medical image.
 %       [2]PMIGinputs.where2Store: file path to store the generated images.
 %       [3]PMIGinputs.fileFormat: 'jpg' or 'png'.
+%       [4]PMIGinputs.sliceOrientation: 'a' (axial) or 'c' (coronal) or 's'
+%       (sagittal)
 %
 % Outputs: Folder containing the converted images. 
 %
@@ -30,10 +32,20 @@ path2MedImg=PMIGinputs.path2MedImg;
 where2Store=PMIGinputs.where2Store;
 fileFormat=PMIGinputs.fileFormat;
 sliceOrientation=PMIGinputs.sliceOrientation;
+
+switch sliceOrientation
+    case 'a'
+        orientTag='axial';
+    case 'c'
+        orientTag='coronal';
+    case 's'
+        orientTag='sagittal';
+end
+
 % Create the folder to store the converted images.
 
 splitFiles=regexp(path2MedImg,filesep,'split')
-convertedFolder=[splitFiles{end},'-',fileFormat];
+convertedFolder=[splitFiles{end},'-',fileFormat,'-',orientTag];
 cd(where2Store)
 mkdir(convertedFolder);
 where2Store=[where2Store,filesep,convertedFolder];
@@ -63,7 +75,6 @@ for olp=1:length(medImg)
     tempImg=medImg{olp};
     switch sliceOrientation
         case 'a' % axial
-            continue
         case 's' % sagittal
             tempImg=flip(permute(tempImg, [3 1 2 4]),1); 
         case 'c' % coronal

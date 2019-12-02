@@ -19,8 +19,8 @@ function [] = cropNiftiForGan(CNGinputs)
 
 % Hard-coded variables.
 
-xyzDim=[128 128 128]; % dimensions to be cropped
-cropRange=108;  % crop region 
+xyzDim=[256 256 256]; % dimensions to be cropped
+cropRange=44;  % crop region 
 
 % create the folder where the cropped images will be stored.
 
@@ -46,8 +46,8 @@ parfor lp=1:length(niftiFiles)
     yMax=size(imgVol,2);
     zMax=size(imgVol,3);
     croppedVol=croppedVol(cropRange+1:xMax-cropRange,cropRange+1:yMax-cropRange,:);
-    emptySlice=zeros(size(croppedVol(:,:,1)));
-    croppedVol(:,:,zMax+1)=emptySlice;
+    emptyVol=zeros([xyzDim(1) xyzDim(2) (xyzDim(3)-size(imgVol,3))]);
+    croppedVol=cat(3,croppedVol,int16(emptyVol));
     niftiwrite(croppedVol,croppedFileName,hdrInfo);
     disp(['Writing ',croppedFileName,'...']);
     movefile(croppedFileName,path2ConvFolder);
