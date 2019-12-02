@@ -54,6 +54,8 @@ path2PytorchShell=fileparts(which("call-Pytorch.command"))
 path2PytorchShell=[path2PytorchShell,filesep,nameOfShellFile];
 string2Run=['chmod u+x ',path2PytorchShell];
 system(string2Run)
+PATH = getenv('PATH');
+setenv('PATH', [PATH ':/usr/local/desiredpath']);
 disp(['Creating image pairs from ',pathOfSourceImg,' and ',pathOfTrgtImg]);
 end
 
