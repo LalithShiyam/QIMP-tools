@@ -27,6 +27,10 @@
 
 function [] = callPytorchFor2DGAN(CPGinputs)
 
+% Hard-coded variables 
+
+nameOfShellFile='call-Pytorch.command';
+
 % Local variable move
 
 pathOfPytorch=CPGinputs.pathOfPytorchFolder;
@@ -34,15 +38,22 @@ pathOfSourceImg=CPGinputs.pathOfSourceImage;
 pathOfTrgtImg=CPGinputs.pathOfTargetImage;
 pathOfStorage=CPGinputs.where2Store;
 
-% change the current directory 
-
+% create a shell file for running Jun-Yan Zhu's scripts
+cd(pathOfStorage)
+defaultHeader='#! /bin/bash'
 stringToGo2PytorchFolder=['cd ',pathOfPytorch];
-status=system(stringToGo2PytorchFolder);
-
-% Run Jun-Yan Zhu's scripts for creating image pairs.
-
-string2Run=['python datasets/combine_A_and_B.py --fold_A ',pathOfSourceImg,' --fold_B ',pathOfTrgtImg,' --fold_AB ',pathOfStorage];
-status=system(string2Run);
+path2CombineAandB=[pathOfPytorch,filesep,'datasets/combine_A_and_B.py'];
+string2Run=['python ',path2CombineAandB,' --fold_A ',pathOfSourceImg,' --fold_B ',pathOfTrgtImg,' --fold_AB ',pathOfStorage];
+strings2Write{1}=defaultHeader;
+strings2Write{2}=stringToGo2PytorchFolder;
+strings2Write{3}=string2Run;
+fid=fopen(nameOfShellFile,'wt');
+fprintf(fid,'%s\n',strings2Write{:});
+fclose(fid);
+path2PytorchShell=fileparts(which("call-Pytorch.command"))
+path2PytorchShell=[path2PytorchShell,filesep,nameOfShellFile];
+string2Run=['chmod u+x ',path2PytorchShell];
+system(string2Run)
 disp(['Creating image pairs from ',pathOfSourceImg,' and ',pathOfTrgtImg]);
 end
 
