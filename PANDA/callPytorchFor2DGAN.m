@@ -47,4 +47,3 @@ disp(['Creating image pairs from ',pathOfSourceImg,' and ',pathOfTrgtImg]);
 end
 
 
-end
