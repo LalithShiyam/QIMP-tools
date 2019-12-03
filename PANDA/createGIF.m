@@ -52,6 +52,7 @@ axis tight manual % this ensures that getframe() returns a consistent size
 for lp = 1:length(imgStack)
     % Draw plot for y = x.^n
     imshow(imgStack{lp},[]);
+    title(imgFiles(lp).name)
     drawnow 
       % Capture the plot as an image 
       frame = getframe(h); 
@@ -59,9 +60,9 @@ for lp = 1:length(imgStack)
       [imind,cm] = rgb2ind(im,256); 
       % Write to the GIF File 
       if lp == 1 
-          imwrite(imind,cm,GifFileName,'gif', 'DelayTime',0.1,'Loopcount',inf); 
+          imwrite(imind,cm,GifFileName,'gif', 'DelayTime',0.2,'Loopcount',inf); 
       else 
-          imwrite(imind,cm,GifFileName,'gif','DelayTime',0.1,'WriteMode','append'); 
+          imwrite(imind,cm,GifFileName,'gif','DelayTime',0.2,'WriteMode','append'); 
       end 
 end
 close all
