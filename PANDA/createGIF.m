@@ -14,7 +14,7 @@
 % Inputs: 
 %       [1]CGinputs.pathOfImageSeries: file path to the image series.
 %       [2]CGinputs.where2Store: file path where the GIF file needs to be stored
-%       [3]CGinputs.fileName: intented GIF file name - you don't need to add
+%       [3]CGinputs.fileName: intented GIF file name - you need to add
 %       ".gif" at the end
 %
 % Outputs: A GIF animation of the image-series.
@@ -45,6 +45,7 @@ parfor lp=1:length(imgFiles)
     imgStack{lp}=imread(imgFiles(lp).name);
 end
 
+cd(where2Store)
 h = figure;
 axis tight manual % this ensures that getframe() returns a consistent size
 
@@ -58,10 +59,11 @@ for lp = 1:length(imgStack)
       [imind,cm] = rgb2ind(im,256); 
       % Write to the GIF File 
       if lp == 1 
-          imwrite(imind,cm,GifFilename,'gif', 'Loopcount',inf); 
+          imwrite(imind,cm,GifFileName,'gif', 'DelayTime',0.1,'Loopcount',inf); 
       else 
-          imwrite(imind,cm,GifFilename,'gif','WriteMode','append'); 
+          imwrite(imind,cm,GifFileName,'gif','DelayTime',0.1,'WriteMode','append'); 
       end 
 end
+close all
   
 end
