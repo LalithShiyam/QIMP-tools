@@ -24,3 +24,5 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 - convertGanOutputToNativeSpace.m: Converts GAN Nifti files to native Nifti files which are compatible for image registration (344 x 344 x 127).
 
 - callPytorchFor2DGAN.m: Creates an '.command' file to run the pytorch scripts for generating image-pairs (A-B)
+
+- Niftitest.py: Run the Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames 
