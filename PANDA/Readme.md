@@ -27,4 +27,11 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 - callPytorchFor2DGAN.m: Creates an '.command' file to run the pytorch scripts for generating image-pairs (A-B)
 
+- createGIF.m: creates a GIF animation from a series of time-series images (ideally).
+
+- removeEmptySlices.m: Removes empty image pairs before GAN training (prevents unwanted calculation).
+
+
+# Python scripts and their function
+
 - Niftitest.py: Run the Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames 
