@@ -11,7 +11,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 - Python 3
 - github repo: git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pi
 
-# MATLAB scripts and their function
+# MATLAB scripts and their function 
 
 - checkFileFormat.m : Checks the format of the medical images in a given folder, the output is a string which says if the folder contains 'Dicom', 'Nifti' or 'Analyze'.
 
