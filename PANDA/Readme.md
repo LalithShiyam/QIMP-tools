@@ -9,7 +9,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 - MATLAB R2016a or higher
 - SPM 12
 - Python 3
-- github repo: git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pi
+- github repo: git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 # MATLAB scripts and their function 
 
