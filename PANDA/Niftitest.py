@@ -1,21 +1,21 @@
 """ Pix2pix gan Inference on .Nii files
 
-The script run the trained Pix2pix model on the .nii files in the folder ./nifti
+The script run the trained Pix2pix model on the .nii files in the folder selected by the user
 The inference files will be overwritten with the same name in the same folder.
 The pix2pix model is uploaded and the inference is run on each slice on the input volume; the slices are then
 packed together and the .nii file is created.
 
-The script needs:
-  - location of Niftitest.py in the same folder of train.py and test.py files
-  - the weights of the pix2pix model in the path: "checkpoints/experiment_name/"
-  - create folder './nifti' with the .nii with the nifti files to run the inference
-  - To modify the "options/base_options.py" file:
-               '--dataroot', required=False, default='./nifti'
-               '--model', type=str, default='pix2pix'
-               '--netG', type=str, default='unet_256'
-               '--dataset_mode', type=str, default='single'
+Usage: python Niftytest.py --dataroot [name] --model pix2pix --netG [name] --dataset_mode single --checkpoints_dir [name]
 
-Usage: python Niftytest.py
+                           --dataroot: path where the .nii files are stored
+       !!!(not working)    (--model: pix2pix (not working))
+       pix2pix needs to    --netG: unet_256 (if the image 256x256)
+       be default          --dataset_mode: single
+                           --checkpoints_dir: folder path where the --name folder is
+                           --name: folder name where the weights are stored for the inference' (needs to be a subfolder of checkpoints)
+
+
+Example: python Niftitest.py --dataroot ./nifti --netG unet_256 --dataset_mode single --checkpoints_dir ./checkpoints --name experiment_name
 
 """
 
@@ -30,7 +30,12 @@ import re
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--low_dose_root", default='./nifti', help='path to the .nii files folder to run the inference')
+parser.add_argument("--dataroot", default='./nifti', help='path to the .nii files folder to run the inference')
+# parser.add_argument("--model", default='pix2pix', help='model to run')
+parser.add_argument("--netG", default='unet_256', help='specify generator architecture')
+parser.add_argument("--dataset_mode", default='single', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
+parser.add_argument("--checkpoints_dir", default='./checkpoints', help='model weights are saved here')
+parser.add_argument("--name", default='experiment_name', help='model weights are saved here')
 args = parser.parse_args()
 
 
@@ -51,7 +56,17 @@ def lstFiles(Path):
     return images_list
 
 
+config = dict()
+config["images_folder"] = args.dataroot  # Folder where there are the data
+images = lstFiles(config["images_folder"])
+
 opt = TestOptions().parse()  # get test options
+opt.dataroot = args.dataroot
+# opt.model = args.model
+opt.netG = args.netG
+opt.dataset_mode = args.dataset_mode
+opt.checkpoints_dir = args.checkpoints_dir
+opt.name = args.name
 opt.num_threads = 0   # test code only supports num_threads = 1
 opt.batch_size = 1    # test code only supports batch_size = 1
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
@@ -60,12 +75,6 @@ model = create_model(opt)      # create a model given opt.model and other option
 model.setup(opt)               # regular setup: load and print networks; create schedulers
 if opt.eval:
     model.eval()
-
-
-config = dict()
-# config["images_folder"] = './datasets/volumes/'  # Folder where there are the data
-config["images_folder"] = args.low_dose_root  # Folder where there are the data
-images = lstFiles(config["images_folder"])
 
 
 def inference(image_name):
@@ -77,7 +86,7 @@ def inference(image_name):
     high_dose_array = np.zeros((array.shape[0], array.shape[1], 1))
 
     for i in range(array.shape[2]):
-        slice = array[:,:,i]
+        slice = array[:, :, i]
         matplotlib.pyplot.imsave((os.path.join(config["images_folder"], "inference.png")), slice)
         dataset = create_dataset(opt)
         for i, data in enumerate(dataset):
@@ -93,7 +102,7 @@ def inference(image_name):
             result= result[:,:,np.newaxis]
             high_dose_array=np.append(high_dose_array, result, axis=2)      # append inference for each slice to build the volume
 
-    high_dose_array = high_dose_array[1:]                                   # create the .nii file from the inference
+    high_dose_array = high_dose_array[:-1]                                   # create the .nii file from the inference
     high_dose_array = np.transpose(high_dose_array, axes=(2, 1, 0))         # reshape array to z,y,x
     high_dose = sitk.GetImageFromArray(high_dose_array)
     high_dose.SetOrigin(image.GetOrigin())
