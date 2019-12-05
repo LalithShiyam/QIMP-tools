@@ -102,7 +102,7 @@ def inference(image_name):
             result= result[:,:,np.newaxis]
             high_dose_array=np.append(high_dose_array, result, axis=2)      # append inference for each slice to build the volume
 
-    high_dose_array = high_dose_array[1:]                                   # create the .nii file from the inference
+    high_dose_array = high_dose_array[:,:,1:]                                   # create the .nii file from the inference
     high_dose_array = np.transpose(high_dose_array, axes=(2, 1, 0))         # reshape array to z,y,x
     high_dose = sitk.GetImageFromArray(high_dose_array)
     high_dose.SetOrigin(image.GetOrigin())
