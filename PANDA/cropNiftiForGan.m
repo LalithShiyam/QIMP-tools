@@ -19,7 +19,7 @@ function [] = cropNiftiForGan(CNGinputs)
 
 % Hard-coded variables.
 
-xyzDim=[256 256 256]; % dimensions to be cropped
+xyzDim=[256 256 128]; % dimensions to be cropped
 cropRange=44;  % crop region 
 
 % create the folder where the cropped images will be stored.
