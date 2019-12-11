@@ -15,6 +15,8 @@
 %       [1]PMIGinputs.path2MedImg: file path to the medical image.
 %       [2]PMIGinputs.where2Store: file path to store the generated images.
 %       [3]PMIGinputs.fileFormat: 'jpg' or 'png'.
+%       [4]PMIGinputs.sliceOrientation: 'a' (axial) or 'c' (coronal) or 's'
+%       (sagittal)
 %
 % Outputs: Folder containing the converted images. 
 %
@@ -29,11 +31,21 @@ function [] = prepMedImgForGan(PMIGinputs)
 path2MedImg=PMIGinputs.path2MedImg;
 where2Store=PMIGinputs.where2Store;
 fileFormat=PMIGinputs.fileFormat;
+sliceOrientation=PMIGinputs.sliceOrientation;
+
+switch sliceOrientation
+    case 'a'
+        orientTag='axial';
+    case 'c'
+        orientTag='coronal';
+    case 's'
+        orientTag='sagittal';
+end
 
 % Create the folder to store the converted images.
 
 splitFiles=regexp(path2MedImg,filesep,'split')
-convertedFolder=[splitFiles{end},'-',fileFormat];
+convertedFolder=[splitFiles{end},'-',fileFormat,'-',orientTag];
 cd(where2Store)
 mkdir(convertedFolder);
 where2Store=[where2Store,filesep,convertedFolder];
@@ -61,10 +73,17 @@ end
 for olp=1:length(medImg)
     disp(['Processing ',medFiles(olp).name,'...']);
     tempImg=medImg{olp};
-    [ganCmpImg]=makeImgGanCompatabile(tempImg,PMIGinputs);
-    parfor lp=1:size(ganCmpImg,3)
-        pngImg=mat2gray(ganCmpImg(:,:,lp)); 
+    switch sliceOrientation
+        case 'a' % axial
+        case 's' % sagittal
+            tempImg=flip(permute(tempImg, [3 1 2 4]),1); 
+        case 'c' % coronal
+            tempImg=flip(permute(tempImg, [3 2 1 4]),1);
+    end
+    parfor lp=1:size(tempImg,3)
+        pngImg=mat2gray(tempImg(:,:,lp)); 
         pngFileName=[medFiles(olp).name,'-',num2str(lp),'.',fileFormat];
+        pngFileName=strrep(pngFileName,' ','_');
         imwrite(pngImg,pngFileName)
         disp(['Writing slice number ',num2str(lp),'...']);
         movefile(pngFileName,where2Store)
@@ -72,19 +91,5 @@ for olp=1:length(medImg)
     end
 end
 
-end
-
-% Local function 
-
-function [ganCmpImg]=makeImgGanCompatabile(imgVol)
-
-% Hard-coded variables
-    cropMargin=44;
-    
-    
-    ganCmpImg=imgVol;
-    xMax=size(imgVol,1);
-    yMax=size(imgVol,2);
-    ganCmpImg=ganCmpImg(cropMargin+1:(xMax-cropMargin),cropMargin+1:(yMax-cropMargin),:);    
 end
 
