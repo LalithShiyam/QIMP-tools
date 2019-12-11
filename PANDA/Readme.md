@@ -17,7 +17,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 - convertDicomtoNii.m: Converts the Dicom series in a folder to nifti files, using SPM.
 
-- cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 256 (U-net dependency)
+- cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 128 (U-net dependency)
 
 - prepMedImgForGan.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
 
