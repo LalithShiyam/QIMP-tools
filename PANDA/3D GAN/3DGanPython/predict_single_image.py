@@ -31,7 +31,7 @@ parser.add_argument("--stride_layer", type=int, nargs=1, default=8, help="Stride
 args = parser.parse_args()
 
 if args.Use_GPU is True:
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.Select_GPU
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.Select_GPU)
 
 def prepare_batch(image, ijk_patch_indices):
     image_batches = []
@@ -195,7 +195,4 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
 model = UNetGenerator(input_dim=input_dim)
 
-image_evaluate(model, args.image, args.result, args.resample, args.resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
-
-
-
+image_evaluate(model, args.image, args.result, args.resample, args.new_resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)

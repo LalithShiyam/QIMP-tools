@@ -1,5 +1,5 @@
 % This function converts native Nifti files to cropped Nifti files which
-% are compatible for GANs (256 x 256 x 128)
+% are compatible for GANs (128 x 128 x 128)
 %
 % Author : Lalith Kumar Shiyam Sundar
 % Date   : 18 November, 2019
@@ -19,8 +19,8 @@ function [] = cropNiftiForGan(CNGinputs)
 
 % Hard-coded variables.
 
-xyzDim=[256 256 128]; % dimensions to be cropped
-cropRange=44;  % crop region 
+xyzDim=[128 128 128]; % dimensions to be cropped
+cropRange=108;  % crop region 
 
 % create the folder where the cropped images will be stored.
 

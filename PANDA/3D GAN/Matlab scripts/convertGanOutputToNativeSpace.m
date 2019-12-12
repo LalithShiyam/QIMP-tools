@@ -7,6 +7,7 @@
 % Inputs: 
 %       [1]CGONinputs.path2GanNifti: file path to the nifti medical images.
 %       [2]CGONinputs.where2Store: file path to store the generated images.
+%       [3]CGONinputs.path2OrgNifti: file path of the original nifti images
 %
 % Outputs: Folder containing the converted images. 
 %
@@ -22,7 +23,7 @@ function []= convertGanOutputToNativeSpace(CGONinputs)
     xMax=344; % x dimension
     yMax=344; % y dimension
     zMax=127; % z dimension
-    padRange=44; % padding
+    padRange=108; % padding
 
 
 % create the folder where the cropped images will be stored.
