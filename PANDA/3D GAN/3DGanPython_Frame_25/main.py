@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--Use_GPU", action='store_true', default=True, help='Use the GPU')
     parser.add_argument("--Select_GPU", type=int, default=1, help='Select the GPU')
-    parser.add_argument("--Create_training_test_dataset", action='store_true', default=False, help='Divide the data for the training')
+    parser.add_argument("--Create_training_test_dataset", action='store_true', default=True, help='Divide the data for the training')
     parser.add_argument("--Do_you_wanna_train", action='store_true', default=True, help='Training will start')
     parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='Load weights')
     parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=False, help='Model will be tested after the training')
@@ -73,8 +73,8 @@ if __name__ == "__main__":
     parser.add_argument("--nb_epoch", type=int, nargs=1, default=200, help="number of epochs")
     parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=400, help="Number of images per epoch")
     # Inference parameters
-    parser.add_argument("--stride_inplane", type=int, nargs=1, default=8, help="Stride size in 2D plane")
-    parser.add_argument("--stride_layer", type=int, nargs=1, default=8, help="Stride size in z direction")
+    parser.add_argument("--stride_inplane", type=int, nargs=1, default=16, help="Stride size in 2D plane")
+    parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
     args = parser.parse_args()
 
     if args.Use_GPU is True:
@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
         input_dim = [args.batch_size, args.patch_size[0], args.patch_size[1], args.patch_size[2], args.input_channels]
         model = UNetGenerator(input_dim=input_dim)
-        model.load_weights('./History/weights/gen_weights_epoch_55.h5')
+        model.load_weights(args.gen_weights)
 
         check_accuracy_model(model, images_list=args.save_dir + '/' + 'val.txt', labels_list=args.save_dir + '/' + 'val_labels.txt', resample=args.resample,
                              new_resolution=args.new_resolution, patch_size_x=args.patch_size[0],patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],

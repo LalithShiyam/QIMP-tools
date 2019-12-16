@@ -3,7 +3,8 @@ import argparse
 
 ''' The script normalize the images in the low dose and high dose folders. Normalization is performed and images are scaled to interval values: 0-255.
     The images will be overwritten to the previous ones
-    In case you want to change the scale, please take in consideration to change or not the activation function of the generator'''
+    In case you want to change the scale, please take in consideration to change or not the activation function of the generator.
+    The images are cropped from (256,256,128) to (128,128,128)'''
 
 
 parser = argparse.ArgumentParser()
@@ -21,12 +22,12 @@ def normalize_Pet_image(image_name):
     resacleFilter.SetOutputMaximum(255)
     resacleFilter.SetOutputMinimum(0)
     image = normalizeFilter.Execute(image)  # set mean and std deviation
-    image = resacleFilter.Execute(image)  # set intensity 0-65535
+    image = resacleFilter.Execute(image)
 
     label_np = sitk.GetArrayFromImage(image).astype(np.uint8)
-    label_np = np.transpose(label_np, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
-    label_np = label_np[64:192, 76:204, 0:128]
-    label_np = np.transpose(label_np, axes=(2, 1, 0))  # reshape array from itk z,y,x  to  x,y,z
+    label_np = np.transpose(label_np, axes=(2, 1, 0))
+    label_np = label_np[64:192, 76:204, 0:128]         # cropping
+    label_np = np.transpose(label_np, axes=(2, 1, 0))
 
     label_tfm = sitk.GetImageFromArray(label_np)
     label_tfm.SetOrigin(image.GetOrigin())

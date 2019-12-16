@@ -11,10 +11,6 @@ from keras.initializers import RandomNormal, Zeros
 from predict import prepare_batch
 import random
 
-''' Discriminator structure based on Patchgan. The activation function of the last layer is sigmoid. The discriminator can take as input the whole output of the generator or 
-divide it in patches. This setting has to be chosen in the command line when the main.py is launched. If you wish to apply any modification to the discriminator, you can modify 
-the code below. No modification can be apply from the main command line'''
-
 
 def smooth_positive_labels(y):
     output = y - 0.3 + (np.random.random(y) * 0.5)
@@ -25,9 +21,9 @@ def smooth_positive_labels(y):
     else:
         return output
 
-
 def smooth_negative_labels(y):
     return 0 + np.random.random(y) * 0.3
+
 
 
 def get_patches(source_images_for_training, target_images_for_training, mini_patch_size, generator, batch_counter, smooth_labels=True):
@@ -106,15 +102,17 @@ def PatchGanDiscriminator(output_dim, patch_size, padding='same', strides=(2,2,2
     filter_list = [64, 128, 256, 512, 512, 512]
 
     # Layer1 without Batch Normalization
-
     disc_out = Conv3D(filters=filter_list[0], kernel_size=kernel_size,kernel_initializer=RandomNormal(mean=0.0, stddev=0.02),
                                    bias_initializer=Zeros(), padding=padding, strides=strides)(inputs)
     disc_out = LeakyReLU(alpha=0.2)(disc_out)
+    # disc_out = BatchNormalization(axis=4)(disc_out)
+
 
     # build the rest Layers
     # Conv -> BN -> LeakyReLU
     for i, filter_size in enumerate(filter_list[1:]):
         name = 'disc_conv_{}'.format(i+1)
+
 
         disc_out = Conv3D(name=name, filters=filter_list[i+1],kernel_initializer=RandomNormal(mean=0.0, stddev=0.02),
                                    bias_initializer=Zeros(), kernel_size=kernel_size, padding=padding, strides=strides)(disc_out)
@@ -125,6 +123,7 @@ def PatchGanDiscriminator(output_dim, patch_size, padding='same', strides=(2,2,2
             disc_out = SpatialDropout3D(rate=0.5)(disc_out)
 
         disc_out = LeakyReLU(alpha=0.2)(disc_out)
+
 
     x_flat = Flatten()(disc_out)
     x = Dense(2, activation='sigmoid',name="disc_dense")(x_flat)

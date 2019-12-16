@@ -1,5 +1,8 @@
 from keras.layers import Input, Lambda, concatenate
 from keras.models import Model
+import numpy as np
+import math
+from predict import prepare_batch
 
 
 def DCGAN(generator, discriminator, input_dim, patch_size, mini_patch=True):
@@ -22,7 +25,7 @@ def DCGAN(generator, discriminator, input_dim, patch_size, mini_patch=True):
                     image_patches.append(patch)
 
         image_patches = concatenate(image_patches,axis=0)
-
+        print(image_patches.shape)
         dcgan_output = discriminator(image_patches)
         dc_gan = Model(input=[generator_input], output=[generated_image, dcgan_output], name="DCGAN")
 

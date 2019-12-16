@@ -617,7 +617,7 @@ class Resample(object):
 
         if check is True:
             image = resample_sitk_image(image, spacing=new_resolution, interpolator='linear')
-            label = resample_sitk_image(image, spacing=new_resolution, interpolator='linear')
+            label = resample_sitk_image(label, spacing=new_resolution, interpolator='linear')
 
             return {'image': image, 'label': label}
 
@@ -793,6 +793,7 @@ class Augmentation(object):
 
         choice = np.random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8])
         choice = np.random.choice([0, 1, 2, 3, 4, 5, 7, 8])
+
         # no augmentation
         if choice == 0:  # no augmentation
 
