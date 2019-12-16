@@ -6,32 +6,7 @@ from utils.metrics import *
 import utils.NiftiDataset as NiftiDataset
 from tqdm import tqdm
 import datetime
-from networks.generator import *
-import argparse
 
-''' The script run the inference on the single low dose image chosen by the user. Normalization is performed and images are scaled to interval values: 0-255.
-    The path of the input image and the path to save the result must be specified in the command line '''
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use the GPU')
-parser.add_argument('--Select_GPU', type=int, default=1, help='Select the GPU')
-parser.add_argument("--image", type=str, default='./Data_folder/volumes', help='path to the .nii low dose image')
-parser.add_argument("--result", type=str, default='./Data_folder/volumes', help='path to the .nii result to save')
-parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_25.h5', help='generator weights to load')
-# Training parameters
-parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
-parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
-parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
-parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
-parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
-parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
-# Inference parameters
-parser.add_argument("--stride_inplane", type=int, nargs=1, default=16, help="Stride size in 2D plane")
-parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
-args = parser.parse_args()
-
-if args.Use_GPU is True:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.Select_GPU)
 
 def prepare_batch(image, ijk_patch_indices):
     image_batches = []
@@ -48,7 +23,7 @@ def prepare_batch(image, ijk_patch_indices):
     return image_batches
 
 # segment single image
-def image_evaluate(model, image_path, result_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size=1):
+def segment_image_evaluate(model, image_path, label_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
 
     # create transformations to image and labels
     transforms = [
@@ -58,20 +33,44 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
 
-    if not os.path.isdir(result_path):
-        os.mkdir(result_path)
+    case = image_path
+    case = case.split('/')
+    case = case[3]
+    case = case.split('.')
+    case = case[0]
+
+    # case = image_path
+    # case = case.split('/')
+    # case = case[2]
+    # case = case.split('.')
+    # case = case[0]
+    # case = case.split('\\')
+    # case = case[1]
+
+    if not os.path.isdir('./Data_folder/results'):
+        os.mkdir('./Data_folder/results')
+
+    label_directory = os.path.join('./Data_folder/results', case)
+
+    if not os.path.isdir(label_directory):  # create folder
+        os.mkdir(label_directory)
 
     # read image file
     reader = sitk.ImageFileReader()
     reader.SetFileName(image_path)
     image = reader.Execute()
 
-    normalizeFilter = sitk.NormalizeImageFilter()
-    resacleFilter = sitk.RescaleIntensityImageFilter()
-    resacleFilter.SetOutputMaximum(255)
-    resacleFilter.SetOutputMinimum(0)
-    image = normalizeFilter.Execute(image)  # set mean and std deviation
-    image = resacleFilter.Execute(image)  # set intensity 0-65535
+    # read label file
+    reader = sitk.ImageFileReader()
+    reader.SetFileName(label_path)
+    label = reader.Execute()
+
+    # ****************************
+    low = sitk.GetArrayFromImage(image)
+    high = sitk.GetArrayFromImage(label)
+    Psnr_low = psnr(high, low)
+    Nmse_low = nmse(high, low)
+    # ****************************
 
     # preprocess the image and label before inference
     image_tfm = image
@@ -82,18 +81,24 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
     label_tfm.SetDirection(image.GetDirection())
     label_tfm.SetSpacing(image_tfm.GetSpacing())
 
+    original = {'image': image_tfm, 'label': label}
     sample = {'image': image_tfm, 'label': label_tfm}
 
     for transform in transforms:
         sample = transform(sample)
 
     image_tfm, label_tfm = sample['image'], sample['label']
+    label_true = original['label']
 
     # convert image to numpy array
     image_np = sitk.GetArrayFromImage(image_tfm)
     label_np = sitk.GetArrayFromImage(label_tfm)
 
+    # image_np = np.asarray(image_np, np.int32)   # let's see if i get errors
     label_np = np.asarray(label_np, np.float32)
+
+    label_true_np = sitk.GetArrayFromImage(label_true)
+    label_true_np = np.asarray(label_true_np, np.float32)
 
     # unify numpy and sitk orientation
     image_np = np.transpose(image_np, (2, 1, 0))
@@ -141,6 +146,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 
     batches = prepare_batch(image_np, ijk_patch_indices)
 
+    # acutal segmentation
     for i in tqdm(range(len(batches))):
         batch = batches[i]
 
@@ -185,13 +191,63 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
         label = label_tfm
 
     print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
-    label_directory = os.path.join(result_path)
+    label_directory = os.path.join(label_directory, 'label_prediction.nii.gz')
     writer.SetFileName(label_directory)
     writer.Execute(label)
-    print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), result_path))
+    print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), label_path))
+
+    print('Peak signal-to-noise LOW DOSE:', psnr(high, low))
+    print('Normalized Mean squared error LOW DOSE:', (nmse(high, low)))
+    print('Peak signal-to-noise:', psnr(high, label_np))
+    print('Normalized Mean squared error:', (nmse(high, label_np)))
+    print('************* Next image coming... *************')
+    Psnr = psnr(high, label_np)
+    Nmse = nmse(high, label_np)
+
+    return Psnr, Nmse, Psnr_low, Nmse_low
 
 
-input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
-model = UNetGenerator(input_dim=input_dim)
+def check_accuracy_model(model, images_list, labels_list, resample, new_resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
 
-image_evaluate(model, args.image, args.result, args.resample, args.new_resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
+    model = model
+
+    f = open(images_list, 'r')
+    images = f.readlines()
+    f.close()
+
+    f = open(labels_list, 'r')
+    labels = f.readlines()
+    f.close()
+
+    peak = []
+    mse = []
+    peak_low = []
+    mse_low = []
+
+    print("0/%i (0%%)" % len(labels))
+    for i in range(len(labels)):
+
+        Psnr, Mse, Psnr_low, Mse_low = segment_image_evaluate(model=model, image_path=images[i].rstrip(), label_path=labels[i].rstrip(),
+                                                                           resample= resample, resolution=new_resolution, patch_size_x=patch_size_x,
+                                        patch_size_y=patch_size_y, patch_size_z=patch_size_z,  stride_inplane=stride_inplane, stride_layer=stride_layer, batch_size=batch_size)
+
+        peak.append(Psnr)
+        mse.append(Mse)
+        peak_low.append(Psnr_low)
+        mse_low.append(Mse_low)
+
+    peak = np.array(peak)
+    mse = np.array(mse)
+    peak_low = np.array(peak_low)
+    mse_low = np.array(mse_low)
+
+    print('Mean Peak signal-to-noise low dose:', peak_low.mean())
+    print('Mean Normalized Mean squared error low dose:', mse_low.mean())
+    print('Mean Peak signal-to-noise:', peak.mean())
+    print('Mean Normalized Mean squared error:', mse.mean())
+
+
+
+
+
+

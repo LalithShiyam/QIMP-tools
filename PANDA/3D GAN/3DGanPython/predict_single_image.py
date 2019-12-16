@@ -17,7 +17,7 @@ parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use th
 parser.add_argument('--Select_GPU', type=int, default=1, help='Select the GPU')
 parser.add_argument("--image", type=str, default='./Data_folder/volumes', help='path to the .nii low dose image')
 parser.add_argument("--result", type=str, default='./Data_folder/volumes', help='path to the .nii result to save')
-parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_25.h5', help='generator weights to load')
+parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_epoch_20.h5', help='generator weights to load')
 # Training parameters
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
@@ -26,12 +26,12 @@ parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="O
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 # Inference parameters
-parser.add_argument("--stride_inplane", type=int, nargs=1, default=16, help="Stride size in 2D plane")
-parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
+parser.add_argument("--stride_inplane", type=int, nargs=1, default=8, help="Stride size in 2D plane")
+parser.add_argument("--stride_layer", type=int, nargs=1, default=8, help="Stride size in z direction")
 args = parser.parse_args()
 
 if args.Use_GPU is True:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.Select_GPU)
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.Select_GPU
 
 def prepare_batch(image, ijk_patch_indices):
     image_batches = []
@@ -52,8 +52,8 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 
     # create transformations to image and labels
     transforms = [
-        # NiftiDataset.Normalization(),
-        # NiftiDataset.StatisticalNormalization(2.5),
+        # NiftiDataset.Normalization(),  # not with PET
+        # NiftiDataset.StatisticalNormalization(2.5),  # not with PET
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
@@ -141,6 +141,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 
     batches = prepare_batch(image_np, ijk_patch_indices)
 
+    # acutal segmentation
     for i in tqdm(range(len(batches))):
         batch = batches[i]
 
@@ -194,4 +195,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
 model = UNetGenerator(input_dim=input_dim)
 
-image_evaluate(model, args.image, args.result, args.resample, args.new_resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
+image_evaluate(model, args.image, args.result, args.resample, args.resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
+
+
+
