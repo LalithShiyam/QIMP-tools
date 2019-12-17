@@ -181,7 +181,7 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
     if resample is True:
 
         label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='linear')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape, sitk.sitkLinear)
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
         label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
