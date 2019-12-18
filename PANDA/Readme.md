@@ -6,7 +6,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 # Workflow
 
-![PANDA workflow](Images/PANDA workflow.png)
+![PANDA-workflow](Images/PANDA-workflow.png)
 
 # Requirements
 
