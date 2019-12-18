@@ -4,6 +4,10 @@
 
 PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks. 
 
+# Workflow
+
+![PANDA workflow](Images/PANDA workflow.png)
+
 # Requirements
 
 - MATLAB R2016a or higher
