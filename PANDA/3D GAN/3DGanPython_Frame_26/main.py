@@ -1,6 +1,3 @@
-from __future__ import division, print_function
-from functools import partial
-from keras import backend as K
 from utils.data_generator import *
 from logger import *
 from networks.generator import UNetGenerator
@@ -53,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("--val_split", type=float, default=0.1, help='Split value for the validation data (0 to 1 float number)')
     parser.add_argument("--history_dir", type=str, default='./History', help='path where to save sample images during training')
     parser.add_argument("--weights", type=str, default='./History/weights', help='path to save the weights of the model')
-    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_epoch_20.h5', help='generator weights to load')
+    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_26.h5', help='generator weights to load')
     parser.add_argument("--disc_weights", type=str, default='./History/weights/disc_weights_epoch_20.h5', help='generator weights to load')
     parser.add_argument("--dcgan_weights", type=str, default='./History/weights/DCGAN_weights_epoch_20.h5', help='generator weights to load')
 

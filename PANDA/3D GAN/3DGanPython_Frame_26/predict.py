@@ -1,9 +1,10 @@
-import SimpleITK as sitk
-import matplotlib.pyplot as plt
-import os
-import numpy as np
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+from utils.metrics import *
 from utils.NiftiDataset import *
+from utils.metrics import *
 import utils.NiftiDataset as NiftiDataset
+from tqdm import tqdm
 import datetime
 
 
@@ -21,37 +22,54 @@ def prepare_batch(image, ijk_patch_indices):
 
     return image_batches
 
-def plot_generated_batch(image,label, model, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size,epoch):
+# segment single image
+def segment_image_evaluate(model, image_path, label_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
 
-    f = open(image, 'r')
-    images = f.readlines()
-    f.close()
-
-    f = open(label, 'r')
-    labels = f.readlines()
-    f.close()
-
-    image = images[0].rstrip()
-    label = labels[0].rstrip()
-
-
+    # create transformations to image and labels
     transforms = [
         # NiftiDataset.Normalization(),
+        # NiftiDataset.StatisticalNormalization(2.5),
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
 
+    case = image_path
+    case = case.split('/')
+    case = case[3]
+    case = case.split('.')
+    case = case[0]
+
+    # case = image_path
+    # case = case.split('/')
+    # case = case[2]
+    # case = case.split('.')
+    # case = case[0]
+    # case = case.split('\\')
+    # case = case[1]
+
+    if not os.path.isdir('./Data_folder/results'):
+        os.mkdir('./Data_folder/results')
+
+    label_directory = os.path.join('./Data_folder/results', case)
+
+    if not os.path.isdir(label_directory):  # create folder
+        os.mkdir(label_directory)
+
+    # read image file
     reader = sitk.ImageFileReader()
-    reader.SetFileName(image)
+    reader.SetFileName(image_path)
     image = reader.Execute()
 
+    # read label file
     reader = sitk.ImageFileReader()
-    reader.SetFileName(label)
+    reader.SetFileName(label_path)
     label = reader.Execute()
 
     # ****************************
     low = sitk.GetArrayFromImage(image)
     high = sitk.GetArrayFromImage(label)
+    Psnr_low = psnr(high, low)
+    Nmse_low = nmse(high, low)
     # ****************************
 
     # preprocess the image and label before inference
@@ -75,19 +93,12 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     # convert image to numpy array
     image_np = sitk.GetArrayFromImage(image_tfm)
     label_np = sitk.GetArrayFromImage(label_tfm)
+
+    # image_np = np.asarray(image_np, np.int32)   # let's see if i get errors
     label_np = np.asarray(label_np, np.float32)
 
-    slice_volume_20 = image_np[20]
-    slice_volume_40 = image_np[40]
-    slice_volume_63 = image_np[63]
-    slice_volume_80 = image_np[80]
-
-    x = sitk.GetArrayFromImage(label_true)
-
-    slice_label_20 = x[20]
-    slice_label_40 = x[40]
-    slice_label_63 = x[63]
-    slice_label_80 = x[80]
+    label_true_np = sitk.GetArrayFromImage(label_true)
+    label_true_np = np.asarray(label_true_np, np.float32)
 
     # unify numpy and sitk orientation
     image_np = np.transpose(image_np, (2, 1, 0))
@@ -135,7 +146,8 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
 
     batches = prepare_batch(image_np, ijk_patch_indices)
 
-    for i in range(len(batches)):
+    # acutal segmentation
+    for i in tqdm(range(len(batches))):
         batch = batches[i]
 
         pred = model.predict(batch, verbose=2, batch_size=1)  # predict segmentation
@@ -169,7 +181,7 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     if resample is True:
 
         label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='linear')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape, sitk.sitkLinear)
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
         label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
@@ -178,50 +190,64 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     else:
         label = label_tfm
 
-    label_directory = 'History/Epochs_training/epoch_%s' % epoch
-    if not os.path.exists(label_directory):
-        os.makedirs(label_directory)
-    label_directory = os.path.join(label_directory, 'epoch_prediction.nii.gz')
+    print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
+    label_directory = os.path.join(label_directory, 'label_prediction.nii.gz')
     writer.SetFileName(label_directory)
     writer.Execute(label)
+    print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), label_path))
 
-    slice_predicted_20 = sitk.GetArrayFromImage(label)[20]
-    slice_predicted_40 = sitk.GetArrayFromImage(label)[40]
-    slice_predicted_63 = sitk.GetArrayFromImage(label)[63]
-    slice_predicted_80 = sitk.GetArrayFromImage(label)[80]
+    print('Peak signal-to-noise LOW DOSE:', psnr(high, low))
+    print('Normalized Mean squared error LOW DOSE:', (nmse(high, low)))
+    print('Peak signal-to-noise:', psnr(high, label_np))
+    print('Normalized Mean squared error:', (nmse(high, label_np)))
+    print('************* Next image coming... *************')
+    Psnr = psnr(high, label_np)
+    Nmse = nmse(high, label_np)
 
-    fig = plt.figure()
-    fig.set_size_inches(12, 12)
+    return Psnr, Nmse, Psnr_low, Nmse_low
 
-    plt.subplot(5, 3, 1), plt.imshow(slice_volume_20, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 2), plt.imshow(slice_predicted_20, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 3), plt.imshow(slice_label_20, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 4), plt.imshow(slice_volume_40, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 5), plt.imshow(slice_predicted_40, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 6), plt.imshow(slice_label_40, 'gray'), plt.axis('off'), plt.title('High dose')
+def check_accuracy_model(model, images_list, labels_list, resample, new_resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
 
-    plt.subplot(5, 3, 7), plt.imshow(slice_volume_63, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 8), plt.imshow(slice_predicted_63, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 9), plt.imshow(slice_label_63, 'gray'), plt.axis('off'), plt.title('High dose')
+    model = model
 
-    plt.subplot(5, 3, 10), plt.imshow(slice_volume_80, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 11), plt.imshow(slice_predicted_80, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 12), plt.imshow(slice_label_80, 'gray'), plt.axis('off'), plt.title('High dose')
+    f = open(images_list, 'r')
+    images = f.readlines()
+    f.close()
 
-    plt.subplot(5, 3, 13, autoscale_on=True), plt.hist(low.flatten(), bins=256, range=(3, (low.flatten()).max()),
-                                                       density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('Low dose histogram')
-    plt.subplot(5, 3, 14, autoscale_on=True), plt.hist(label_np.flatten(), bins=256,
-                                                       range=(3, (label_np.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('GAN histogram')
-    plt.subplot(5, 3, 15, autoscale_on=True), plt.hist(high.flatten(), bins=256, range=(3, (high.flatten()).max()),
-                                                       density=0, facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('High dose histogram')
+    f = open(labels_list, 'r')
+    labels = f.readlines()
+    f.close()
 
-    plt.savefig('History/Epochs_training/epoch_%s.jpg' % epoch)
-    plt.close()
+    peak = []
+    mse = []
+    peak_low = []
+    mse_low = []
+
+    print("0/%i (0%%)" % len(labels))
+    for i in range(len(labels)):
+
+        Psnr, Mse, Psnr_low, Mse_low = segment_image_evaluate(model=model, image_path=images[i].rstrip(), label_path=labels[i].rstrip(),
+                                                                           resample= resample, resolution=new_resolution, patch_size_x=patch_size_x,
+                                        patch_size_y=patch_size_y, patch_size_z=patch_size_z,  stride_inplane=stride_inplane, stride_layer=stride_layer, batch_size=batch_size)
+
+        peak.append(Psnr)
+        mse.append(Mse)
+        peak_low.append(Psnr_low)
+        mse_low.append(Mse_low)
+
+    peak = np.array(peak)
+    mse = np.array(mse)
+    peak_low = np.array(peak_low)
+    mse_low = np.array(mse_low)
+
+    print('Mean Peak signal-to-noise low dose:', peak_low.mean())
+    print('Mean Normalized Mean squared error low dose:', mse_low.mean())
+    print('Mean Peak signal-to-noise:', peak.mean())
+    print('Mean Normalized Mean squared error:', mse.mean())
+
+
+
+
 
 

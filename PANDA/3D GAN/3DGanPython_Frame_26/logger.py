@@ -2,6 +2,7 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+from utils.metrics import *
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 import datetime
@@ -37,6 +38,7 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
 
     transforms = [
         # NiftiDataset.Normalization(),
+        # NiftiDataset.StatisticalNormalization(2.5),
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
@@ -52,6 +54,8 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     # ****************************
     low = sitk.GetArrayFromImage(image)
     high = sitk.GetArrayFromImage(label)
+    Psnr_low = psnr(high, low)
+    Nmse_low = nmse(high, low)
     # ****************************
 
     # preprocess the image and label before inference
@@ -82,7 +86,7 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     slice_volume_63 = image_np[63]
     slice_volume_80 = image_np[80]
 
-    x = sitk.GetArrayFromImage(label_true)
+    x=sitk.GetArrayFromImage(label_true)
 
     slice_label_20 = x[20]
     slice_label_40 = x[40]
@@ -191,35 +195,28 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     slice_predicted_80 = sitk.GetArrayFromImage(label)[80]
 
     fig = plt.figure()
-    fig.set_size_inches(12, 12)
+    fig.set_size_inches(10, 10)
 
-    plt.subplot(5, 3, 1), plt.imshow(slice_volume_20, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 2), plt.imshow(slice_predicted_20, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 3), plt.imshow(slice_label_20, 'gray'), plt.axis('off'), plt.title('High dose')
+    plt.subplot(4, 3, 1), plt.imshow(slice_volume_20, 'gray'),  plt.axis('off'), plt.title('Low dose')
+    plt.subplot(4, 3, 2), plt.imshow(slice_predicted_20, 'gray'),  plt.axis('off'), plt.title('GAN')
+    plt.subplot(4, 3, 3), plt.imshow(slice_label_20, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 4), plt.imshow(slice_volume_40, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 5), plt.imshow(slice_predicted_40, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 6), plt.imshow(slice_label_40, 'gray'), plt.axis('off'), plt.title('High dose')
+    plt.subplot(4, 3, 4), plt.imshow(slice_volume_40, 'gray'), plt.axis('off'), plt.title('Low dose')
+    plt.subplot(4, 3, 5), plt.imshow(slice_predicted_40, 'gray'), plt.axis('off'), plt.title('GAN')
+    plt.subplot(4, 3, 6), plt.imshow(slice_label_40, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 7), plt.imshow(slice_volume_63, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 8), plt.imshow(slice_predicted_63, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 9), plt.imshow(slice_label_63, 'gray'), plt.axis('off'), plt.title('High dose')
+    plt.subplot(4, 3, 7), plt.imshow(slice_volume_63, 'gray'), plt.axis('off'), plt.title('Low dose')
+    plt.subplot(4, 3, 8), plt.imshow(slice_predicted_63, 'gray'), plt.axis('off'), plt.title('GAN')
+    plt.subplot(4, 3, 9), plt.imshow(slice_label_63, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 10), plt.imshow(slice_volume_80, 'gray'), plt.axis('off'), plt.title('Low dose')
-    plt.subplot(5, 3, 11), plt.imshow(slice_predicted_80, 'gray'), plt.axis('off'), plt.title('GAN')
-    plt.subplot(5, 3, 12), plt.imshow(slice_label_80, 'gray'), plt.axis('off'), plt.title('High dose')
+    plt.subplot(4, 3, 10), plt.imshow(slice_volume_80, 'gray'), plt.axis('off'), plt.title('Low dose')
+    plt.subplot(4, 3, 11), plt.imshow(slice_predicted_80, 'gray'), plt.axis('off'), plt.title('GAN')
+    plt.subplot(4, 3, 12), plt.imshow(slice_label_80, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 13, autoscale_on=True), plt.hist(low.flatten(), bins=256, range=(3, (low.flatten()).max()),
-                                                       density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('Low dose histogram')
-    plt.subplot(5, 3, 14, autoscale_on=True), plt.hist(label_np.flatten(), bins=256,
-                                                       range=(3, (label_np.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('GAN histogram')
-    plt.subplot(5, 3, 15, autoscale_on=True), plt.hist(high.flatten(), bins=256, range=(3, (high.flatten()).max()),
-                                                       density=0, facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('High dose histogram')
+    print('Peak signal-to-noise --- LOW DOSE:', Psnr_low)
+    print('Normalized Mean squared error --- LOW DOSE:', Nmse_low)
+    print('Peak signal-to-noise:', psnr(high, label_np))
+    print('Normalized Mean squared error:', (nmse(high, label_np)))
 
     plt.savefig('History/Epochs_training/epoch_%s.jpg' % epoch)
     plt.close()

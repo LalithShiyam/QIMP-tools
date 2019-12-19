@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from utils.metrics import *
 from utils.NiftiDataset import *
-from utils.metrics import *
 import utils.NiftiDataset as NiftiDataset
 from tqdm import tqdm
 import datetime
@@ -28,7 +26,6 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
     # create transformations to image and labels
     transforms = [
         # NiftiDataset.Normalization(),
-        # NiftiDataset.StatisticalNormalization(2.5),
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
@@ -65,13 +62,6 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
     reader.SetFileName(label_path)
     label = reader.Execute()
 
-    # ****************************
-    low = sitk.GetArrayFromImage(image)
-    high = sitk.GetArrayFromImage(label)
-    Psnr_low = psnr(high, low)
-    Nmse_low = nmse(high, low)
-    # ****************************
-
     # preprocess the image and label before inference
     image_tfm = image
 
@@ -88,17 +78,13 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
         sample = transform(sample)
 
     image_tfm, label_tfm = sample['image'], sample['label']
-    label_true = original['label']
 
     # convert image to numpy array
     image_np = sitk.GetArrayFromImage(image_tfm)
     label_np = sitk.GetArrayFromImage(label_tfm)
 
-    # image_np = np.asarray(image_np, np.int32)   # let's see if i get errors
+    # image_np = np.asarray(image_np, np.uint8)
     label_np = np.asarray(label_np, np.float32)
-
-    label_true_np = sitk.GetArrayFromImage(label_true)
-    label_true_np = np.asarray(label_true_np, np.float32)
 
     # unify numpy and sitk orientation
     image_np = np.transpose(image_np, (2, 1, 0))
@@ -182,7 +168,6 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
 
         label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='linear')
         label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
-        label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
@@ -195,16 +180,7 @@ def segment_image_evaluate(model, image_path, label_path, resample, resolution, 
     writer.SetFileName(label_directory)
     writer.Execute(label)
     print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), label_path))
-
-    print('Peak signal-to-noise LOW DOSE:', psnr(high, low))
-    print('Normalized Mean squared error LOW DOSE:', (nmse(high, low)))
-    print('Peak signal-to-noise:', psnr(high, label_np))
-    print('Normalized Mean squared error:', (nmse(high, label_np)))
     print('************* Next image coming... *************')
-    Psnr = psnr(high, label_np)
-    Nmse = nmse(high, label_np)
-
-    return Psnr, Nmse, Psnr_low, Nmse_low
 
 
 def check_accuracy_model(model, images_list, labels_list, resample, new_resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
@@ -219,32 +195,11 @@ def check_accuracy_model(model, images_list, labels_list, resample, new_resoluti
     labels = f.readlines()
     f.close()
 
-    peak = []
-    mse = []
-    peak_low = []
-    mse_low = []
-
     print("0/%i (0%%)" % len(labels))
     for i in range(len(labels)):
 
-        Psnr, Mse, Psnr_low, Mse_low = segment_image_evaluate(model=model, image_path=images[i].rstrip(), label_path=labels[i].rstrip(),
-                                                                           resample= resample, resolution=new_resolution, patch_size_x=patch_size_x,
+       segment_image_evaluate(model=model, image_path=images[i].rstrip(), label_path=labels[i].rstrip(), resample= resample, resolution=new_resolution, patch_size_x=patch_size_x,
                                         patch_size_y=patch_size_y, patch_size_z=patch_size_z,  stride_inplane=stride_inplane, stride_layer=stride_layer, batch_size=batch_size)
-
-        peak.append(Psnr)
-        mse.append(Mse)
-        peak_low.append(Psnr_low)
-        mse_low.append(Mse_low)
-
-    peak = np.array(peak)
-    mse = np.array(mse)
-    peak_low = np.array(peak_low)
-    mse_low = np.array(mse_low)
-
-    print('Mean Peak signal-to-noise low dose:', peak_low.mean())
-    print('Mean Normalized Mean squared error low dose:', mse_low.mean())
-    print('Mean Peak signal-to-noise:', peak.mean())
-    print('Mean Normalized Mean squared error:', mse.mean())
 
 
 
