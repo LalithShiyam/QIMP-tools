@@ -10,7 +10,7 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 # Examples
 
-Low dose ______________________________ Gan _______________________ High dose
+Low dose _____________________________ Gan _______________________ High dose
 
 ![Low dose](Images/low_dose_axial.gif)![GAN](Images/gan_axial.gif)![High dose](Images/high_dose_axial.gif)
 
