@@ -10,12 +10,12 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 # Examples
 
-Sample images from the axial and coronal views: on the left side the low dose PET image, in the middle the output of the 3D GAN and on the right side the high dose PET image
+Sample images from the axial and coronal views: on the left side the early frames of PET image, in the middle the output of the 3D GAN and on the right side the PET image from the late frame
 
 ![Low dose](Images/low_dose_axial.gif)![GAN](Images/gan_axial.gif)![High dose](Images/high_dose_axial.gif)
 *******************************************************************************
 ![Low dose](Images/low_dose_coronal.gif)![GAN](Images/gan_coronal.gif)![High dose](Images/high_dose_coronal.gif)
-
+*******************************************************************************
 # Requirements
 
 - MATLAB R2016a or higher
