@@ -38,6 +38,18 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 # Python scripts and their function
 
-- Niftitest.py: Run the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames 
+- Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
 
-- 3D Gan Keras folder: the folder cointains the script of the 3D Gan. (need to re-think about the main page and the matlab scripts for 2D) 
+- Normalize_PET_images: Normalizes and crops the images for the training. To run before the main.py
+
+- data_generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
+
+- check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
+
+- main.py: Runs the training and the prediction on the training and validation dataset.
+
+- logger.py: Generates sample images and histograms to monitor the training.
+
+- predict.py: It launches the inference on training and validation data in the main.py
+
+- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
