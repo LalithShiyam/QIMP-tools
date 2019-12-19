@@ -46,10 +46,13 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 - check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
 
+- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
+
 - main.py: Runs the training and the prediction on the training and validation dataset.
 
 - logger.py: Generates sample images and histograms to monitor the training.
 
 - predict.py: It launches the inference on training and validation data in the main.py
 
-- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
+- predict_single_image.py: It launches the inference on a single input image chosen by the user.
+
