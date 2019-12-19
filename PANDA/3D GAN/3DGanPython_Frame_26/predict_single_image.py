@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from utils.metrics import *
 from utils.NiftiDataset import *
-from utils.metrics import *
 import utils.NiftiDataset as NiftiDataset
 from tqdm import tqdm
 import datetime
@@ -53,7 +51,6 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
     # create transformations to image and labels
     transforms = [
         # NiftiDataset.Normalization(),
-        # NiftiDataset.StatisticalNormalization(2.5),
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
@@ -71,7 +68,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
     resacleFilter.SetOutputMaximum(255)
     resacleFilter.SetOutputMinimum(0)
     image = normalizeFilter.Execute(image)  # set mean and std deviation
-    image = resacleFilter.Execute(image)  # set intensity 0-65535
+    image = resacleFilter.Execute(image)
 
     # preprocess the image and label before inference
     image_tfm = image
@@ -176,7 +173,6 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
 
         label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='linear')
         label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
-        label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
@@ -189,10 +185,6 @@ def image_evaluate(model, image_path, result_path, resample, resolution, patch_s
     writer.SetFileName(label_directory)
     writer.Execute(label)
     print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), result_path))
-    print('Peak signal-to-noise LOW DOSE:', psnr(high, low))
-    print('Normalized Mean squared error LOW DOSE:', (nmse(high, low)))
-    print('Peak signal-to-noise:', psnr(high, label_np))
-    print('Normalized Mean squared error:', (nmse(high, label_np)))
 
 
 input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]

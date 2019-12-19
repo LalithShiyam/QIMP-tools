@@ -1,3 +1,6 @@
+from __future__ import division, print_function
+from functools import partial
+from keras import backend as K
 from utils.data_generator import *
 from logger import *
 from networks.generator import UNetGenerator
