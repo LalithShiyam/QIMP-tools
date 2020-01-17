@@ -1,7 +1,6 @@
 from utils.NiftiDataset import *
 from utils.data_generator import *
 import utils.NiftiDataset as NiftiDataset
-from utils.metrics import *
 import argparse
 
 ''' The script show as the output of the data loader (volume and label patches) fed to the network. Before running it, the .txt files with the list

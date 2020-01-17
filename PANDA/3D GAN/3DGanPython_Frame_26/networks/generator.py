@@ -4,7 +4,7 @@ from networks.nestnet import *
 from keras import backend as K
 from keras.initializers import RandomNormal, Zeros
 from keras.engine import Input, Model
-from keras.layers.convolutional import Conv3D, Deconv3D
+from keras.layers.convolutional import Conv3D, Deconv3D, Conv3DTranspose
 from keras.layers import Conv3D, MaxPooling3D, UpSampling3D, Activation, BatchNormalization, PReLU, Deconvolution3D, ReLU, SpatialDropout3D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import Adam

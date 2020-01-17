@@ -1,4 +1,3 @@
-import SimpleITK as sitk
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 
