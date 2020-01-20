@@ -5,6 +5,16 @@ import numpy as np
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 import datetime
+import math
+
+
+def from_numpy_to_itk(image_np,image_itk):
+    image_np = np.transpose(image_np, (2, 1, 0))
+    image = sitk.GetImageFromArray(image_np)
+    image.SetOrigin(image_itk.GetOrigin())
+    image.SetDirection(image_itk.GetDirection())
+    image.SetSpacing(image_itk.GetSpacing())
+    return image
 
 
 def prepare_batch(image, ijk_patch_indices):
@@ -21,8 +31,10 @@ def prepare_batch(image, ijk_patch_indices):
 
     return image_batches
 
-def plot_generated_batch(image,label, model, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size,epoch):
 
+def plot_generated_batch(image,label, model, resample, resolution, crop_background, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size,epoch):
+
+    # --------------- reading the images from the validation list txt --------------
     f = open(image, 'r')
     images = f.readlines()
     f.close()
@@ -31,33 +43,36 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     labels = f.readlines()
     f.close()
 
-    image = images[0].rstrip()
+    image = images[0].rstrip()  # taking the first in the list to monitor during the training
     label = labels[0].rstrip()
+    # ------------------------------------------------------------------------------
 
 
     transforms = [
-        # NiftiDataset.Normalization(),
         NiftiDataset.Resample(resolution, resample),
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
 
+    # normalize the images
+    normalizeFilter = sitk.NormalizeImageFilter()
+    resacleFilter = sitk.RescaleIntensityImageFilter()
+    resacleFilter.SetOutputMaximum(255)
+    resacleFilter.SetOutputMinimum(0)
+
     reader = sitk.ImageFileReader()
     reader.SetFileName(image)
     image = reader.Execute()
+    image = normalizeFilter.Execute(image)  # set low dose mean and std deviation
+    image = resacleFilter.Execute(image)
 
     reader = sitk.ImageFileReader()
     reader.SetFileName(label)
     label = reader.Execute()
-
-    # ****************************
-    low = sitk.GetArrayFromImage(image)
-    high = sitk.GetArrayFromImage(label)
-    # ****************************
-
-    # preprocess the image and label before inference
-    image_tfm = image
+    label = normalizeFilter.Execute(label)  # set high dose mean and std deviation
+    label = resacleFilter.Execute(label)
 
     # create empty label in pair with transformed image
+    image_tfm = image
     label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
     label_tfm.SetOrigin(image_tfm.GetOrigin())
     label_tfm.SetDirection(image.GetDirection())
@@ -71,6 +86,73 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
 
     image_tfm, label_tfm = sample['image'], sample['label']
     label_true = original['label']
+
+
+    # ----------------------  Padding the image if the z dimension is not even ----------------------
+    image_np = sitk.GetArrayFromImage(image_tfm)
+    image_np = np.transpose(image_np, (2, 1, 0))
+
+    if (image_np.shape[2] % 2) == 0:
+        image_tfm = image_tfm
+        label_tfm = label_tfm
+        label_true = label_true
+    else:
+        # pad low dose image
+        image_np = np.pad(image_np, ((0, 0), (0, 0), (0, 1)), 'constant')
+        image_tfm = from_numpy_to_itk(image_np, image_tfm)
+
+        # pad high dose image
+        label_true_np = sitk.GetArrayFromImage(label_true)
+        label_true_np = np.transpose(label_true_np, (2, 1, 0))
+        label_true_np = np.pad(label_true_np, ((0, 0), (0, 0), (0, 1)), 'constant')
+        label_true = from_numpy_to_itk(label_true_np, image_tfm)
+
+        # create empty label in pair with transformed image
+        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+        label_tfm.SetOrigin(image_tfm.GetOrigin())
+        label_tfm.SetDirection(image_tfm.GetDirection())
+        label_tfm.SetSpacing(image_tfm.GetSpacing())
+
+    # ----------------- Computing centroid of the image to crop the background -------------------
+    threshold = sitk.BinaryThresholdImageFilter()
+    threshold.SetLowerThreshold(1)
+    threshold.SetUpperThreshold(255)
+    threshold.SetInsideValue(1)
+    threshold.SetOutsideValue(0)
+
+    roiFilter = sitk.RegionOfInterestImageFilter()
+    roiFilter.SetSize([crop_background[0], crop_background[1], crop_background[2]])
+
+    if patch_size_x > crop_background[0]:
+        print('patch size x bigger than image dimension x')
+        quit()
+    if patch_size_y > crop_background[1]:
+        print('patch size y bigger than image dimension y')
+        quit()
+    if patch_size_z > crop_background[2]:
+        print('patch size y bigger than image dimension z')
+        quit()
+
+    image_mask = threshold.Execute(label_true)
+    image_mask = sitk.GetArrayFromImage(image_mask)
+    image_mask = np.transpose(image_mask, (2, 1, 0))
+
+    # centroid of the brain input for the inference
+    centroid = scipy.ndimage.measurements.center_of_mass(image_mask)
+    x_centroid = np.int(centroid[0])
+    y_centroid = np.int(centroid[1])
+    roiFilter.SetIndex([int(x_centroid - (crop_background[0]) / 2), int(y_centroid - (crop_background[1]) / 2), 0])
+    # ------------------------------------------------------------------------------------------------
+
+    # cropping the background from low dose, high dose and gan image
+    image_tfm = roiFilter.Execute(image_tfm)
+    label_tfm = roiFilter.Execute(label_tfm)
+    label_true = roiFilter.Execute(label_true)
+
+    # ****************************
+    low = sitk.GetArrayFromImage(image_tfm)    # values to plot on the histograms
+    high = sitk.GetArrayFromImage(label_true)
+    # ****************************
 
     # convert image to numpy array
     image_np = sitk.GetArrayFromImage(image_tfm)
@@ -96,7 +178,7 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     # a weighting matrix will be used for averaging the overlapped region
     weight_np = np.zeros(label_np.shape)
 
-    # prepare image batch indices
+    # ---------------------- Prepare image batch indices---------------------------------
     inum = int(math.ceil((image_np.shape[0] - patch_size_x) / float(stride_inplane))) + 1
     jnum = int(math.ceil((image_np.shape[1] - patch_size_y) / float(stride_inplane))) + 1
     knum = int(math.ceil((image_np.shape[2] - patch_size_z) / float(stride_layer))) + 1
@@ -135,10 +217,11 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
 
     batches = prepare_batch(image_np, ijk_patch_indices)
 
+    # ------------------------ Inference  GAN ---------------------------------------
     for i in range(len(batches)):
         batch = batches[i]
 
-        pred = model.predict(batch, verbose=2, batch_size=1)  # predict segmentation
+        pred = model.predict(batch, verbose=2, batch_size=1)  # prediction GAN
         pred = np.squeeze(pred, axis=4)
 
         istart = ijk_patch_indices[i][0][0]
@@ -185,6 +268,8 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     writer.SetFileName(label_directory)
     writer.Execute(label)
 
+    # --------------------------- Plotting samples during training ---------------------------------
+
     slice_predicted_20 = sitk.GetArrayFromImage(label)[20]
     slice_predicted_40 = sitk.GetArrayFromImage(label)[40]
     slice_predicted_63 = sitk.GetArrayFromImage(label)[63]
@@ -209,19 +294,14 @@ def plot_generated_batch(image,label, model, resample, resolution, patch_size_x,
     plt.subplot(5, 3, 11), plt.imshow(slice_predicted_80, 'gray'), plt.axis('off'), plt.title('GAN')
     plt.subplot(5, 3, 12), plt.imshow(slice_label_80, 'gray'), plt.axis('off'), plt.title('High dose')
 
-    plt.subplot(5, 3, 13, autoscale_on=True), plt.hist(low.flatten(), bins=256, range=(3, (low.flatten()).max()),
-                                                       density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
+    plt.subplot(5, 3, 13, autoscale_on=True), plt.hist(low.flatten(), bins=256, range=(3, (low.flatten()).max()), density=0, facecolor='red', align='right', alpha=0.75,
                                                        histtype='stepfilled'), plt.title('Low dose histogram')
-    plt.subplot(5, 3, 14, autoscale_on=True), plt.hist(label_np.flatten(), bins=256,
-                                                       range=(3, (label_np.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
+    plt.subplot(5, 3, 14, autoscale_on=True), plt.hist(label_np.flatten(), bins=256, range=(3, (label_np.flatten()).max()), density=0, facecolor='red', align='right', alpha=0.75,
                                                        histtype='stepfilled'), plt.title('GAN histogram')
-    plt.subplot(5, 3, 15, autoscale_on=True), plt.hist(high.flatten(), bins=256, range=(3, (high.flatten()).max()),
-                                                       density=0, facecolor='red', align='right', alpha=0.75,
+    plt.subplot(5, 3, 15, autoscale_on=True), plt.hist(high.flatten(), bins=256, range=(3, (high.flatten()).max()), density=0, facecolor='red', align='right', alpha=0.75,
                                                        histtype='stepfilled'), plt.title('High dose histogram')
 
-    plt.savefig('History/Epochs_training/epoch_%s.jpg' % epoch)
+    plt.savefig('History/Epochs_training/epoch_%s.png' % epoch)
     plt.close()
 
 

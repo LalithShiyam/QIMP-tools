@@ -1,4 +1,3 @@
-import SimpleITK as sitk
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 
@@ -39,12 +38,4 @@ def data_generator(images_list, labels_list, batch_size, Transforms):
             c = 0
 
         yield (trainDataset)
-
-        # # read batch_size of data
-        # for i in range(0, batch_size):
-        #     source_img = read_image(files_image_dir[count])
-        #     target_img = read_image(files_label_dir[count])
-        #     count = (count+1)%len(files_image_dir)
-        #
-        # yield source_img, target_img
 

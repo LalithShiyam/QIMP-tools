@@ -1,4 +1,5 @@
 from utils.NiftiDataset import *
+import matplotlib.pyplot as plt
 from utils.data_generator import *
 import utils.NiftiDataset as NiftiDataset
 import argparse
@@ -11,6 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
+parser.add_argument("--crop_background_size", type=int, default=[128, 128, 128], help='Crop the background of the images. Center is fixed in the centroid of the skull')
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--mini_patch_size", type=int, nargs=3, default=[64, 64, 64], help="Input dimension for the discriminator and DCgan")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
@@ -24,8 +26,8 @@ args = parser.parse_args()
 min_pixel = int(args.min_pixel*((args.patch_size[0]*args.patch_size[1]*args.patch_size[2])/100))
 
 trainTransforms = [
-    # NiftiDataset.StatisticalNormalization(2.5),
-    # NiftiDataset.Normalization(),
+    NiftiDataset.Padding((344, 344, 128)),   # add one padded row to the original PET output
+    NiftiDataset.CropBackground((args.crop_background_size[0], args.crop_background_size[1], args.crop_background_size[2])),
     NiftiDataset.Resample(args.new_resolution, args.resample),
     NiftiDataset.Augmentation(),
     NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
@@ -88,9 +90,6 @@ mask = np.squeeze(mask, axis=0)
 
 plot3d(vol)
 plot3d(mask)
-
-print('Peak signal-to-noise LOW DOSE:', psnr(mask, vol))
-print('Normalized Mean squared error LOW DOSE:', (nmse(mask, vol)))
 
 
 

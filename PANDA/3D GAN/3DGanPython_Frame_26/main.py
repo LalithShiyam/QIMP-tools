@@ -10,14 +10,17 @@ from keras.optimizers import Adam
 from keras.utils import generic_utils as keras_generic_utils
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
-import os
 import time
-import numpy as np
 import tensorflow as tf
 from predict import *
 import argparse
 
 ''' 
+
+Author information
+David Iommi, M.Sc.
+Quantitative Imaging and Medical Physics, Medical University of Vienna
+Date: 20.1.2020, Wien
 
 The network was realized to generate high-dose Pet images from low-dose frames.
 
@@ -42,26 +45,27 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--Use_GPU", action='store_true', default=True, help='Use the GPU')
-    parser.add_argument("--Select_GPU", type=int, default=1, help='Select the GPU')
-    parser.add_argument("--Create_training_test_dataset", action='store_true', default=True, help='Divide the data for the training')
-    parser.add_argument("--Do_you_wanna_train", action='store_true', default=True, help='Training will start')
-    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='Load weights')
-    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=False, help='Model will be tested after the training')
+    parser.add_argument("--Select_GPU", type=int, default=3, help='Select the GPU')
+    parser.add_argument("--Create_training_test_dataset", action='store_true', default=False, help='Divide the data for the training. If True, it creates a new list every time')
+    parser.add_argument("--Do_you_wanna_train", action='store_true', default=False, help='Training will start')
+    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='PreLoad existing weights weights')
+    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=True, help='Model will be tested after the training')
     parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
     parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii low dose images')
     parser.add_argument("--labels_folder", type=str, default='./Data_folder/labels', help='path to the .nii high dose images')
     parser.add_argument("--val_split", type=float, default=0.1, help='Split value for the validation data (0 to 1 float number)')
     parser.add_argument("--history_dir", type=str, default='./History', help='path where to save sample images during training')
     parser.add_argument("--weights", type=str, default='./History/weights', help='path to save the weights of the model')
-    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_26.h5', help='generator weights to load')
-    parser.add_argument("--disc_weights", type=str, default='./History/weights/disc_weights_epoch_20.h5', help='generator weights to load')
-    parser.add_argument("--dcgan_weights", type=str, default='./History/weights/DCGAN_weights_epoch_20.h5', help='generator weights to load')
+    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_25.h5', help='generator weights to load')
+    parser.add_argument("--disc_weights", type=str, default='./History/weights/disc_weights_epoch_20.h5', help='discriminator weights to load')
+    parser.add_argument("--dcgan_weights", type=str, default='./History/weights/DCGAN_weights_epoch_20.h5', help='dcgan weights to load')
 
     # Training parameters
     parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
     parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
     parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
     parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
+    parser.add_argument("--crop_background_size", type=int, default=[128, 128, 128], help='Crop the background of the images. Center is fixed in the centroid of the skull')
     parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
     parser.add_argument("--mini_patch", action='store_true', default=True, help=' If True, discriminator and DCgan will be trained with subpatches of the generator input')
     parser.add_argument("--mini_patch_size", type=int, nargs=3, default=[64, 64, 64], help="Input dimension for the discriminator and DCgan")
@@ -74,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--beta_2", type=float, nargs=1, default=0.999, help="beta 2")
     parser.add_argument("--epsilon", type=float, nargs=1, default=1e-8, help="epsilon optimizer")
     parser.add_argument("--nb_epoch", type=int, nargs=1, default=200, help="number of epochs")
-    parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=400, help="Number of images per epoch")
+    parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=200, help="Number of images per epoch")
     # Inference parameters
     parser.add_argument("--stride_inplane", type=int, nargs=1, default=16, help="Stride size in 2D plane")
     parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
@@ -123,8 +127,8 @@ if __name__ == "__main__":
         print('Number of training samples:', n_samples_train, '  Number of validation samples:', n_samples_val)
 
         trainTransforms = [
-            # NiftiDataset.StatisticalNormalization(2.5),
-            # NiftiDataset.Normalization(),
+            NiftiDataset.Padding((344, 344, 128)),  # add one padded row to the original PET output
+            NiftiDataset.CropBackground((args.crop_background_size[0], args.crop_background_size[1], args.crop_background_size[2])),
             NiftiDataset.Resample(args.new_resolution, args.resample),
             NiftiDataset.Augmentation(),
             NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
@@ -224,8 +228,8 @@ if __name__ == "__main__":
                                                 ("GAN L1", gan_mae),
                                                 ("GAN logloss", gan_log_loss)])
 
-            plot_generated_batch(image=args.save_dir + '/' + 'val.txt', label=args.save_dir + '/' + 'val_labels.txt',model=generator, resample=args.resample, resolution=args.new_resolution, patch_size_x=args.patch_size[0],
-                                 patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1,
+            plot_generated_batch(image=args.save_dir + '/' + 'val.txt', label=args.save_dir + '/' + 'val_labels.txt',model=generator, resample=args.resample, resolution=args.new_resolution,
+                                 crop_background=args.crop_background_size,patch_size_x=args.patch_size[0], patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1,
                                  epoch=epoch_count)
 
             epoch_count += 1
@@ -255,12 +259,13 @@ if __name__ == "__main__":
         model.load_weights(args.gen_weights)
 
         check_accuracy_model(model, images_list=args.save_dir + '/' + 'val.txt', labels_list=args.save_dir + '/' + 'val_labels.txt', resample=args.resample,
-                             new_resolution=args.new_resolution, patch_size_x=args.patch_size[0],patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],
+                             new_resolution=args.new_resolution, crop_background=args.crop_background_size,
+                             patch_size_x=args.patch_size[0],patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],
                              stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1)
 
         check_accuracy_model(model, images_list=args.save_dir + '/' + 'train.txt',
                              labels_list=args.save_dir + '/' + 'train_labels.txt', resample=args.resample,
-                             new_resolution=args.new_resolution, patch_size_x=args.patch_size[0],
+                             new_resolution=args.new_resolution, crop_background=args.crop_background_size, patch_size_x=args.patch_size[0],
                              patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],
                              stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1)
 

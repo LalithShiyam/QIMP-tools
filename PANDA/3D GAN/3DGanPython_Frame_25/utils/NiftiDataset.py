@@ -1,11 +1,8 @@
 import SimpleITK as sitk
-import tensorflow as tf
 import os
 import re
 import numpy as np
-import math
 import random
-import matplotlib.pyplot as plt
 import scipy.ndimage.interpolation as interpolation
 from sklearn.model_selection import train_test_split
 import scipy
@@ -412,17 +409,6 @@ class NiftiDataset(object):
         image_paths = image_paths.rstrip()
         label_paths = label_paths.rstrip()
 
-
-        # dataset = tf.data.Dataset.from_tensor_slices(
-        #     (image_paths, label_paths))  # create the tensor with the path to the images
-        #
-        # dataset = dataset.map(
-        #     lambda image_path, label_path: tuple(tf.py_function(  # apply all reading and transforms operations o the images
-        #         self.input_parser, [image_path, label_path], [tf.float32, tf.int32])))
-        #
-        # self.dataset = dataset
-        # self.data_size = len(image_paths)
-        # return self.dataset
         return self.input_parser(image_paths, label_paths)
 
     def read_image(self, path):
@@ -434,24 +420,28 @@ class NiftiDataset(object):
     def input_parser(self, image_path, label_path):  # read image and label
         # read image and label
         image = self.read_image(image_path)
-        # cast image and label                            # not for PET
+
+        image = Normalization(image)  # set intensity 0-255
+
+        # cast image and label
         castImageFilter = sitk.CastImageFilter()
         castImageFilter.SetOutputPixelType(self.bit)
         image = castImageFilter.Execute(image)
 
         if self.train:
             label = self.read_image(label_path)
-            castImageFilter.SetOutputPixelType(self.bit)   # not for PET
+            label = Normalization(label)  # set intensity 0-255
+            castImageFilter.SetOutputPixelType(self.bit)
             label = castImageFilter.Execute(label)
 
         elif self.test:
             label = self.read_image(label_path)
-            castImageFilter.SetOutputPixelType(self.bit)   # not for PET
+            label = Normalization(label)  # set intensity 0-255
+            castImageFilter.SetOutputPixelType(self.bit)
             label = castImageFilter.Execute(label)
 
         else:
-            label = sitk.Image(image.GetSize(), self.bit)  # not for PET
-            label = sitk.Image(image.GetSize())  # if it´s not train, create a new image with same size and spacing
+            label = sitk.Image(image.GetSize(), self.bit)
             label.SetOrigin(image.GetOrigin())
             label.SetSpacing(image.GetSpacing())
 
@@ -475,25 +465,19 @@ class NiftiDataset(object):
         return image_np, label_np  # this is the final output to feed the network
 
 
-class Normalization(object):
+def Normalization(image):
     """
-    Normalize an image to 0 - 255 (8bits) - 65535 (16bits)
+    Normalize an image to 0 - 255 (8bits)
     """
+    normalizeFilter = sitk.NormalizeImageFilter()
+    resacleFilter = sitk.RescaleIntensityImageFilter()
+    resacleFilter.SetOutputMaximum(255)
+    resacleFilter.SetOutputMinimum(0)
 
-    def __init__(self):
-        self.name = 'Normalization'
+    image = normalizeFilter.Execute(image)  # set mean and std deviation
+    image = resacleFilter.Execute(image)  # set intensity 0-255
 
-    def __call__(self, sample):
-        normalizeFilter = sitk.NormalizeImageFilter()
-        resacleFilter = sitk.RescaleIntensityImageFilter()
-        resacleFilter.SetOutputMaximum(255)
-        resacleFilter.SetOutputMinimum(0)
-        image, label = sample['image'], sample['label']
-        # image = normalizeFilter.Execute(image)  # set mean and std deviation
-        image = resacleFilter.Execute(image)  # set intensity 0-255
-
-
-        return {'image': image, 'label': label}
+    return image
 
 
 class StatisticalNormalization(object):
@@ -684,6 +668,54 @@ class Padding(object):
             return {'image': image, 'label': label}
 
 
+class CropBackground(object):
+    """
+    Crop the background of the images. Center is fixed in the centroid of the skull
+    It crops the images in the xy plane, no cropping is applied to the z direction
+    """
+
+    def __init__(self, output_size):
+        self.name = 'CropBackground'
+
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size, output_size)
+        else:
+            assert len(output_size) == 3
+            self.output_size = output_size
+
+        assert all(i > 0 for i in list(self.output_size))
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        size_new = self.output_size
+
+        threshold = sitk.BinaryThresholdImageFilter()
+        threshold.SetLowerThreshold(1)
+        threshold.SetUpperThreshold(255)
+        threshold.SetInsideValue(1)
+        threshold.SetOutsideValue(0)
+
+        roiFilter = sitk.RegionOfInterestImageFilter()
+        roiFilter.SetSize([size_new[0], size_new[1], size_new[2]])
+
+        label_mask = threshold.Execute(label)
+        label_mask = sitk.GetArrayFromImage(label_mask)
+        label_mask = np.transpose(label_mask, (2, 1, 0))
+
+        centroid = scipy.ndimage.measurements.center_of_mass(label_mask)
+
+        x_centroid = np.int(centroid[0])
+        y_centroid = np.int(centroid[1])
+
+        roiFilter.SetIndex([int(x_centroid-(size_new[0])/2), int(y_centroid-(size_new[1])/2), 0])
+
+        label_crop = roiFilter.Execute(label)
+        image_crop = roiFilter.Execute(image)
+
+        return {'image': image_crop, 'label': label_crop}
+
+
 class RandomCrop(object):
     """
     Crop randomly the image in a sample. This is usually used for data augmentation.
@@ -791,7 +823,6 @@ class Augmentation(object):
 
     def __call__(self, sample):
 
-        choice = np.random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8])
         choice = np.random.choice([0, 1, 2, 3, 4, 5, 7, 8])
 
         # no augmentation
