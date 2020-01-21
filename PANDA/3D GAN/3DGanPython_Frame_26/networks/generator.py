@@ -1,6 +1,5 @@
 from keras.layers.merge import concatenate
 import numpy as np
-from networks.nestnet import *
 from keras import backend as K
 from keras.initializers import RandomNormal, Zeros
 from keras.engine import Input, Model
