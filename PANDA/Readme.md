@@ -48,8 +48,6 @@ Sample images from the axial and coronal views: on the left side the early frame
 
 - Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
 
-- Normalize_PET_images: Normalizes and crops the images for the training. To run before the main.py
-
 - data_generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
 
 - check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
