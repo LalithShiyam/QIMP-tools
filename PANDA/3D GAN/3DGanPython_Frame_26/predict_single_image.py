@@ -18,7 +18,7 @@ parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use th
 parser.add_argument('--Select_GPU', type=int, default=1, help='Select the GPU')
 parser.add_argument("--image", type=str, default='./Data_folder/volumes/HC007 test_PET-Frame.nii', help='path to the .nii low dose image')
 parser.add_argument("--result", type=str, default='./Data_folder/volumes/prova.nii', help='path to the .nii result to save')
-parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_25.h5', help='generator weights to load')
+parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_frame_26.h5', help='generator weights to load')
 # Training parameters
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
