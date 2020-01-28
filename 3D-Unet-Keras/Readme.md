@@ -11,7 +11,7 @@ The inference script extract, segment the sigle patches and automatically recont
 
 Sample MR images from the sagittal and coronal views for carotid artery segmentation (the segmentation result is highlighted in green)
 
-![MR1](images/1.jpg)![MR2](images/2.jpg)![MR3](images/3.jpg)![MR4](images/4.jpg)
+![MR1](images/1.JPG)![MR2](images/2.JPG)![MR3](images/3.JPG)![MR4](images/4.JPG)
 *******************************************************************************
 
 # Requirements
@@ -29,7 +29,8 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 
 # Python scripts and their function
 
-- generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
+- generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. NiftiDataset.py
+  skeleton taken from https://github.com/jackyko1991/vnet-tensorflow
 
 - check_loader_patches: Shows example of patches fed to the network during the training  
 
@@ -40,4 +41,6 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 - predict.py: It launches the inference on training and validation data in the main.py
 
 - segment_single_image.py: It launches the inference on a single input image chosen by the user.
+
+
 
