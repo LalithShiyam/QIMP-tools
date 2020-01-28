@@ -11,7 +11,7 @@ The inference script extract, segment the sigle patches and automatically recont
 
 Sample MR images from the sagittal and coronal views for carotid artery segmentation (the segmentation result is highlighted in green)
 
-![MR1](images/1.JPG)![MR2](images/2.JPG)![MR3](images/3.JPG)![MR4](images/4.JPG)
+![MR3](images/3.JPG)![MR4](images/4.JPG)
 *******************************************************************************
 
 # Requirements
