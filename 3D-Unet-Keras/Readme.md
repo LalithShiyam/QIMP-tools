@@ -1,4 +1,4 @@
-# 3D-Unet: patched based 3D U-net for medical images segmentation
+# 3D-Unet: patched based Keras implementation for medical images segmentation
 
 3D-Unet pipeline is a computational toolbox (python-Keras) for segmentation using neural networks. 
 
@@ -35,6 +35,8 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 - check_loader_patches: Shows example of patches fed to the network during the training  
 
 - unet3d.py: the architecture of the U-net. Taken from https://github.com/ellisdg/3DUnetCNN
+
+- metrics.py : list of metrics and loss functions for the training
 
 - main.py: Runs the training and the prediction on the training and validation dataset.
 
