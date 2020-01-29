@@ -7,15 +7,15 @@
 The training and the inference are patch based: the script randomly extract corresponding patches of the images and labels and feed them to the network during training.
 The inference script extract, segment the sigle patches and automatically recontruct them in the original size.
 
-# Examples
+### Example images
 
 Sample MR images from the sagittal and coronal views for carotid artery segmentation (the segmentation result is highlighted in green)
 
 ![MR3](images/3.JPG)![MR4](images/4.JPG)
 *******************************************************************************
 
-# Requirements
-- Python 
+### Requirements
+- Python3
 - pillow
 - scikit-learn
 - simpleITK
@@ -27,9 +27,9 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 - tqdm
 - git+https://www.github.com/farizrahman4u/keras-contrib.git
 
-# Python scripts and their function
+### Python scripts and their function
 
-- generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. NiftiDataset.py
+- generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN (reads .nii files). NiftiDataset.py
   skeleton taken from https://github.com/jackyko1991/vnet-tensorflow
 
 - check_loader_patches: Shows example of patches fed to the network during the training  
@@ -43,6 +43,12 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 - predict.py: It launches the inference on training and validation data in the main.py
 
 - segment_single_image.py: It launches the inference on a single input image chosen by the user.
+
+## Usage
+As example, run the following command to start the training:
+```console
+python3 main.py --Create_training_val_test_dataset=True --Do_you_wanna_train=True --images_folder= ./pathtotheimages --labels_folder= ./pathtothelabels --patch_size=(64,64,64)
+```
 
 
 
