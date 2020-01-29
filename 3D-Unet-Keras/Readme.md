@@ -47,8 +47,64 @@ Sample MR images from the sagittal and coronal views for carotid artery segmenta
 ## Usage
 As example, run the following command to start the training:
 ```console
-python3 main.py --Create_training_val_test_dataset=True --Do_you_wanna_train=True --images_folder= ./pathtotheimages --labels_folder= ./pathtothelabels --patch_size=(64,64,64)
+python3 main.py --Create_training_val_test_dataset=True --Do_you_wanna_train=True --save_dir ./pathtoimageslabelsfolders --images_folder= ./pathtotheimages --labels_folder= ./pathtothelabels --patch_size=(64,64,64)
 ```
+There are several parameters you need to set; you can modify the default ones in the script or write them in order manually:
 
+--Use_GPU, help='Use the GPU'
+--Select_GPU, help='Select the GPU'
+--Create_training_val_test_dataset, help='Divide the data for the training'
+--Do_you_wanna_train, help='Training will start'
+--Do_you_wanna_load_weights, help='Pre-load weights'
+--Do_you_wanna_check_accuracy, help='Model will be tested'
+--save_dir, help='path to the images and labels folders'
+--images_folder, help='path to the .nii images'
+--labels_folder, help='path to the .nii labels'
+--val_split, help='Split value for the validation data (0 to 1 float number)'
+--test_split, help='Split value for the test data (0 to 1 float number)'
+--history_dir, help='path where to save sample images during training'
+--weights, help='path to save the weights of the model'
+--unet_weights, help='unet weights to load/save'
 
+--resample, help='Decide or not to resample the images to a new resolution'
+--new_resolution, help='New image resolution'
+--input_channels, help="Input channels"
+--output_channels,help="Output channels"
+--patch_size, help="Input dimension for the network"
+--batch_size, help="Batch size to feed the network (currently supports 1)"
+--drop_ratio, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1"
+--min_pixel, type=float, nargs=1, default=0.001, help="Percentage of minimum non-zero pixels in the cropped label"
+--labels, help="Values of the labels"
+--n_labels, help="The label numbers on the input image"
+--initial_learning_rate, help="learning rate"
+--nb_epoch, help="number of epochs"
+--patience, help="learning rate will be reduced after this many epochs if the validation loss is not improving"
+--early_stop, help="training will be stopped after this many epochs without the validation loss improving"
+--learning_rate_drop, help="factor by which the learning rate will be reduced"
+--n_images_per_epoch, help="Number of training images per epoch"
+
+--stride_inplane, help="Stride size in 2D plane"
+--stride_layer, help="Stride size in z direction"
+
+## Features
+- 3D data processing ready
+- Augmented patching technique, requires less image input for training
+- Multichannel input and one channel output (multichannel to be developed)
+- Generic image reader with SimpleITK support (Currently only support .nii/.nii.gz format for convenience, easy to expand to DICOM, tiff and jpg format)
+- Medical image pre-post processing with SimpleITK filters
+- Easy network replacement structure
+- Dice score similarity measurement as golden standard in medical image segmentation benchmarking
+- Includes Tensorboard to track the training process
+
+## Citations
+Use the following Bibtex if you need to cite this repository:
+```bibtex
+@misc{davidiommi1991_unet_Keras,
+  author = {David Iommi},
+  title = {3D-Unet: patched based Keras implementation for medical images segmentation},
+  howpublished = {\url{https://github.com/jackyko1991/vnet-tensorflow}},
+  year = {2020},
+  publisher={Github},
+  journal={GitHub repository},
+}
 
