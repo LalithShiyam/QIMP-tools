@@ -4,6 +4,18 @@
 
 PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks. 
 
+# Workflow
+
+![PANDA-workflow](Images/PANDA-workflow.png)
+
+# Examples
+
+Sample images from the axial and coronal views: on the left side the early frames of PET image, in the middle the output of the 3D GAN and on the right side the PET image from the late frame
+
+![Low dose](Images/low_dose_axial.gif)![GAN](Images/gan_axial.gif)![High dose](Images/high_dose_axial.gif)
+*******************************************************************************
+![Low dose](Images/low_dose_coronal.gif)![GAN](Images/gan_coronal.gif)![High dose](Images/high_dose_coronal.gif)
+*******************************************************************************
 # Requirements
 
 - MATLAB R2016a or higher
@@ -34,6 +46,19 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 # Python scripts and their function
 
-- Niftitest.py: Run the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames 
+- Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
 
-- 3D Gan Keras folder: the folder cointains the script of the 3D Gan. (need to re-think about the main page and the matlab scripts for 2D) 
+- data_generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
+
+- check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
+
+- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
+
+- main.py: Runs the training and the prediction on the training and validation dataset.
+
+- logger.py: Generates sample images and histograms to monitor the training.
+
+- predict.py: It launches the inference on training and validation data in the main.py
+
+- predict_single_image.py: It launches the inference on a single input image chosen by the user.
+
