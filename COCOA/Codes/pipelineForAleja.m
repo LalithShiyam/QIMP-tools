@@ -1,0 +1,131 @@
+% This pipeline has been explicitly written for aleja and will probably not
+% work for other cases. 
+% Author - Lalith Kumar Shiyam Sundar, PhD
+% Date   - 10 Feb, 2020
+% Inputs: 
+%       [1] pfaInputs.pathOfCTAC - path to the DICOM CT-AC volume
+%       [2] pfaInputs.pathOfMRAC - path to the DICOM MR-AC volume
+%       [3] pfaInputs.pathOfT1MR - path to the DICOM T1-MR volume
+%       [4] pfaInputs.Where2Store- path to store the results
+%
+% Outputs:
+%       A CT-uMap with MR headers.
+% 
+% Usage:
+% pipelineForAleja(pfaInputs).
+%
+%-------------------------------------------------------------------------%
+%                         Program start
+%-------------------------------------------------------------------------%
+
+
+function []=pipelineForAleja(pfaInputs)
+
+% Hard-coded variables 
+
+CTfile='CT-AC.nii';
+mracFile='MR-AC.nii';
+MRfile='T1-MR.nii';
+
+
+cd(pfaInputs.Where2Store)
+mkdir('Processing-folder')
+path2WorkingFolder=[pfaInputs.Where2Store,filesep,'Processing-folder'];
+cd(path2WorkingFolder)
+mkdir('CT-umap')
+pathOfCTumap=[path2WorkingFolder,filesep,'CT-umap'];
+mkdir('MR-with-CT-umap')
+pathOfMRumap=[path2WorkingFolder,filesep,'MR-with-CT-umap'];
+
+% Convert dicom volumes to nifti.
+
+% CT-AC conversion
+cd(pfaInputs.pathOfCTAC)
+copyfile('*IMA',pathOfCTumap);
+convertDicomtoNii(cd,cd)
+niftyFile=dir('*nii');
+movefile(niftyFile.name,CTfile)
+movefile(CTfile,path2WorkingFolder)
+cd(path2WorkingFolder)
+
+% MR-umap move
+
+cd(pfaInputs.pathOfMRAC)
+copyfile('*IMA',pathOfMRumap);
+
+% T1-MR conversion 
+cd(pfaInputs.pathOfT1MR)
+convertDicomtoNii(cd,cd)
+niftyFile=dir('*nii');
+movefile(niftyFile.name,MRfile)
+movefile(MRfile,path2WorkingFolder)
+
+% Segmenting the bed from the CT image 
+cd(path2WorkingFolder)
+OrgCT=spm_read_vols(spm_vol(CTfile)); % reads in the Nifti CT images.
+figure,imshow3D(OrgCT,[]); % Displaying the mid axial slice of the CT volume
+title('Original CT image with bed'); 
+ 
+ 
+% 2.) Performing a quantile based histogram thresholding.
+ 
+SkullThresh=quantile(OrgCT(:),0.95); %adaptive quantile thresholding @ 80%
+BinaryCT=OrgCT>SkullThresh; % segmenting the head 
+for lp=1:size(BinaryCT,3)
+    FillTheHead(:,:,lp)=imfill(BinaryCT(:,:,lp),'holes'); % filling up the holes in the head, this is done to segment out only the head
+end
+figure,imshow3D(FillTheHead);title('Binary mask with the holes in the head filled');
+ 
+% 3.) Perform connected component analysis for seperating the bed and the 
+% head.
+ 
+[HeadOnly,~]=VolumePartitioner(FillTheHead); % The function VolumePartitioner chooses the two biggest connected components in the binary volume
+BackgroundOutsideHead=(~HeadOnly).*(-1000); % scaling the background to -1000 as the hounsfield unit of air is -1000;
+OnlyTheHead=(HeadOnly.*OrgCT)+BackgroundOutsideHead; % scalar multiplication performed for removing the bed with the grayscale head remaining, 'OnlyTheHead'is the CT volume without the bed.
+figure,imshow3D(OrgCT),title('Original CT ');
+figure,imshow3D(OnlyTheHead),title('Bed removed'); %subplot(1,3,3),imshowpair(OrgCT(:,:,(size(OrgCT,3)/2)),OnlyTheHead(:,:,(size(OnlyTheHead,3)/2))),title('Fused');
+
+% Scale the CT head, so that the hounsfield units are in the range of 0 to 4000
+OnlyTheHead=OnlyTheHead+1000;
+
+% Stealing the NIFTI header and writing the CT volume without the bed as NIFTI file
+% We need a NIFTI header for the CT volume without the bed, which we have 
+% generated. So we are gonna use the NIFTI header from the original CT volume.
+
+NiftiHdrCT=spm_vol(CTfile); % read the nifti header of the original CT file using the 'spm_vol' function.
+NiftiHdrCT.fname='CTwithoutBed.nii'; % name for the CT volume without the bed - i have hardcoded it, you can change it.
+spm_write_vol(NiftiHdrCT,OnlyTheHead); % writing the CT volume without the bed as a NIFTI file.
+disp('Segmentation of the bed is done!');
+
+% Reorient the CT image where the origin is in the center of the volume
+
+st.vol=spm_vol('CTwithoutBed.nii');
+vs=st.vol.mat\eye(4);
+vs(1:3,4)=(st.vol.dim+1)/2;
+spm_get_space(st.vol.fname,inv(vs));
+disp('Orgin of the CT image is in the center now...');
+
+%% Perform co-registration between the dixon and CT without the bed.
+
+CoregInputs.SourceImgPath=[path2WorkingFolder,filesep,'CTwithoutBed.nii'];
+CoregInputs.RefImgPath=[path2WorkingFolder,filesep,MRfile];
+CoregInputs.MaskImgPath={''};
+CoregInputs.Prefix='Coreg_';
+CoregInputs.Interp=4; % 4-th degree interpolation 
+Coregistration_job(CoregInputs);
+finalCTfile=dir('Coreg*nii');
+CTimgToScale=spm_read_vols(spm_vol(finalCTfile.name));
+
+disp('Coregistration done!');
+
+%% Perform bilinear scaling and push the CT-Umap to the dixon header (reference CT u-Map)
+
+CTuMap=carneyBilinearScaling(pathOfCTumap,CTimgToScale);
+disp('Bilinear scaling done based on carney 2006...');
+
+pushDataToDicom(pathOfMRumap,CTuMap);
+
+disp(['Results stored in: ',pathOfMRumap]);
+
+
+end
