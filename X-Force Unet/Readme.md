@@ -1,9 +1,8 @@
-# 3D-Unet: patched based Keras implementation for medical images segmentation
+![3D U-net](images/X-force-logo.png)
+
+# X-Force U-net: A 3D patch based Keras implementation for medical images segmentation
 
 3D-Unet pipeline is a computational toolbox (python-Keras) for segmentation using neural networks. 
-
-![3D U-net](images/unet.png)
-
 The training and the inference are patch based: the script randomly extract corresponding patches of the images and labels and feed them to the network during training.
 The inference script extract, segment the sigle patches and automatically recontruct them in the original size.
 
