@@ -64,3 +64,24 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 # Tutorial for 3DGAN
 
+1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom in Nifti format. All images in this study are produced with a PET/MRI-Siemens Biograph mMR. Frames dimensions are 344x344x127. 
+
+2) Place low-dose frames in "Data_folder/volumes" folder and high-dose frames in "Data_folder/labels" folder. Be sure that low/high dose frames are correctly paired in the two folders.
+
+3) Launch the pipeline for training and testing dataset (example): 
+```console
+python3 main.py --Create_training_test_dataset=True --Do_you_wanna_train=True  --Do_you_wanna_check_accuracy=True --patch_size=(128,128,64)
+```
+Sample of the logger, which helps to monitor the training process
+![logger](epoch_80.png)
+
+4) Launch the inference on only one image (example):
+
+```console
+python3 predict_single_image.py --image "path to low dose frame" --result "path to high dose to save" --gen_weights "path to the weights of the generator network"  --patch_size=(128,128,64)
+```
+
+
+
+
+
