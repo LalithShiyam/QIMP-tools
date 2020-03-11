@@ -89,5 +89,3 @@ mask = np.squeeze(mask, axis=0)
 plot3d(vol)
 plot3d(mask)
 
-
-

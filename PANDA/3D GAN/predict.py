@@ -79,7 +79,7 @@ def segment_image_evaluate(model, image_path, resample, resolution,  crop_backgr
     image_tfm = image
 
     # create empty label in pair with transformed image
-    label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+    label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
     label_tfm.SetOrigin(image_tfm.GetOrigin())
     label_tfm.SetDirection(image.GetDirection())
     label_tfm.SetSpacing(image_tfm.GetSpacing())
@@ -104,7 +104,7 @@ def segment_image_evaluate(model, image_path, resample, resolution,  crop_backgr
         image_tfm = from_numpy_to_itk(image_np, image_tfm)
 
         # create empty label in pair with transformed image
-        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
         label_tfm.SetOrigin(image_tfm.GetOrigin())
         label_tfm.SetDirection(image_tfm.GetDirection())
         label_tfm.SetSpacing(image_tfm.GetSpacing())
@@ -150,8 +150,8 @@ def segment_image_evaluate(model, image_path, resample, resolution,  crop_backgr
     label_tfm = roiFilter.Execute(label_tfm)
 
     # convert image to numpy array
-    image_np = sitk.GetArrayFromImage(image_tfm).astype(np.uint8)
-    label_np = sitk.GetArrayFromImage(label_tfm).astype(np.uint8)
+    image_np = sitk.GetArrayFromImage(image_tfm)
+    label_np = sitk.GetArrayFromImage(label_tfm)
 
     label_np = np.asarray(label_np, np.float32)
 
@@ -219,7 +219,7 @@ def segment_image_evaluate(model, image_path, resample, resolution,  crop_backgr
 
     print("{}: Evaluation complete".format(datetime.datetime.now()))
     # eliminate overlapping region using the weighted value
-    label_np = np.rint(np.float32(label_np) / np.float32(weight_np) + 0.01)
+    label_np = (np.float32(label_np) / np.float32(weight_np) + 0.01)
 
     # ------------------- Coming back to (344,344,127) dimension ----------------------------------------
     if Padding is True:
@@ -237,8 +237,8 @@ def segment_image_evaluate(model, image_path, resample, resolution,  crop_backgr
 
     if resample is True:
 
-        label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='linear')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
+        label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
@@ -266,7 +266,7 @@ def check_accuracy_model(model, images_list, resample, new_resolution, crop_back
     print("0/%i (0%%)" % len(images))
     for i in range(len(images)):
 
-       segment_image_evaluate(model=model, image_path=images[i].rstrip(), resample= resample, resolution=new_resolution, crop_background=crop_background, patch_size_x=patch_size_x,
+       segment_image_evaluate(model=model, image_path=images[i].rstrip(), resample=resample, resolution=new_resolution, crop_background=crop_background, patch_size_x=patch_size_x,
                                         patch_size_y=patch_size_y, patch_size_z=patch_size_z,  stride_inplane=stride_inplane, stride_layer=stride_layer, batch_size=batch_size)
 
 

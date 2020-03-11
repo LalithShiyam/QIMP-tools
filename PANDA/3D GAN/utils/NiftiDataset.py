@@ -202,7 +202,7 @@ def matrix_from_axis_angle(a):
 
 def resample_image(image, transform):
     reference_image = image
-    interpolator = sitk.sitkLinear
+    interpolator = sitk.sitkBSpline
     default_value = 0
     return sitk.Resample(image, reference_image, transform,
                          interpolator, default_value)
@@ -211,7 +211,7 @@ def resample_image(image, transform):
 def resample_label(image, transform):
     reference_image = image
     # interpolator = sitk.sitkNearestNeighbor
-    interpolator = sitk.sitkLinear
+    interpolator = sitk.sitkBSpline
     default_value = 0
     return sitk.Resample(image, reference_image, transform,
                          interpolator, default_value)
@@ -364,7 +364,6 @@ def translateit(image, offset, isseg=False):
 
     return img
 
-
 # --------------------------------------------------------------------------------------
 
 class NiftiDataset(object):
@@ -393,7 +392,7 @@ class NiftiDataset(object):
         self.transforms = transforms
         self.train = train
         self.test = test
-        self.bit = sitk.sitkUInt8
+        self.bit = sitk.sitkFloat32
 
     def get_dataset(self):
 
@@ -446,8 +445,8 @@ class NiftiDataset(object):
                 sample = transform(sample)
 
         # convert sample to tf tensors
-        image_np = sitk.GetArrayFromImage(sample['image']).astype(np.uint8)
-        label_np = sitk.GetArrayFromImage(sample['label']).astype(np.uint8)
+        image_np = sitk.GetArrayFromImage(sample['image'])
+        label_np = sitk.GetArrayFromImage(sample['label'])
 
         # to unify matrix dimension order between SimpleITK([x,y,z]) and numpy([z,y,x])  (actually it´s the contrary)
         image_np = np.transpose(image_np, (2, 1, 0))
@@ -527,6 +526,29 @@ class ManualNormalization(object):
         return {'image': image, 'label': label}
 
 
+class LaplacianRecursive(object):
+    """
+    Laplacian recursive image filter
+    """
+
+    def __init__(self, sigma):
+        self.name = 'Laplacianrecursiveimagefilter'
+        assert isinstance(sigma, (int, float))
+        self.sigma = sigma
+
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        filter = sitk.LaplacianRecursiveGaussianImageFilter()
+
+        filter.SetSigma(1.5)
+
+        image = filter.Execute(image)
+        label = filter.Execute(label)
+
+        return {'image': image, 'label': label}
+
+
 class Reorient(object):
     """
     (Beta) Function to orient image in specific axes order
@@ -594,8 +616,8 @@ class Resample(object):
         check = self.check
 
         if check is True:
-            image = resample_sitk_image(image, spacing=new_resolution, interpolator='linear')
-            label = resample_sitk_image(label, spacing=new_resolution, interpolator='linear')
+            image = resample_sitk_image(image, spacing=new_resolution, interpolator='bspline')
+            label = resample_sitk_image(label, spacing=new_resolution, interpolator='bspline')
 
             return {'image': image, 'label': label}
 
@@ -647,13 +669,13 @@ class Padding(object):
             resampler.SetSize(output_size)
 
             # resample on image
-            resampler.SetInterpolator(sitk.sitkLinear)
+            resampler.SetInterpolator(sitk.sitkBSpline)
             resampler.SetOutputOrigin(image.GetOrigin())
             resampler.SetOutputDirection(image.GetDirection())
             image = resampler.Execute(image)
 
             # resample on label
-            resampler.SetInterpolator(sitk.sitkLinear)
+            resampler.SetInterpolator(sitk.sitkBSpline)
             resampler.SetOutputOrigin(label.GetOrigin())
             resampler.SetOutputDirection(label.GetDirection())
 
@@ -1023,7 +1045,7 @@ class ConfidenceCrop(object):
 
         # guarantee label type to be integer
         castFilter = sitk.CastImageFilter()
-        castFilter.SetOutputPixelType(sitk.sitkInt8)
+        castFilter.SetOutputPixelType(sitk.sitkUInt8)
         label = castFilter.Execute(label)
 
         ccFilter = sitk.ConnectedComponentImageFilter()

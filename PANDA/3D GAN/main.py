@@ -45,11 +45,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--Use_GPU", action='store_true', default=True, help='Use the GPU')
-    parser.add_argument("--Select_GPU", type=int, default=3, help='Select the GPU')
+    parser.add_argument("--Select_GPU", type=int, default=2, help='Select the GPU')
     parser.add_argument("--Create_training_test_dataset", action='store_true', default=False, help='Divide the data for the training. If True, it creates a new list every time')
-    parser.add_argument("--Do_you_wanna_train", action='store_true', default=False, help='Training will start')
+    parser.add_argument("--Do_you_wanna_train", action='store_true', default=True, help='Training will start')
     parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='PreLoad existing weights weights')
-    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=True, help='Model will be tested after the training')
+    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=False, help='Model will be tested after the training')
     parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
     parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii low dose images')
     parser.add_argument("--labels_folder", type=str, default='./Data_folder/labels', help='path to the .nii high dose images')
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--beta_2", type=float, nargs=1, default=0.999, help="beta 2")
     parser.add_argument("--epsilon", type=float, nargs=1, default=1e-8, help="epsilon optimizer")
     parser.add_argument("--nb_epoch", type=int, nargs=1, default=160, help="number of epochs")
-    parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=300, help="Number of images per epoch")
+    parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=200, help="Number of images per epoch")
     # Inference parameters
     parser.add_argument("--stride_inplane", type=int, nargs=1, default=1, help="Stride size in 2D plane")
     parser.add_argument("--stride_layer", type=int, nargs=1, default=1, help="Stride size in z direction")

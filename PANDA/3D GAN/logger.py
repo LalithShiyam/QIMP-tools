@@ -43,8 +43,8 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
     labels = f.readlines()
     f.close()
 
-    image = images[0].rstrip()  # taking the first in the list to monitor during the training
-    label = labels[0].rstrip()
+    image = images[2].rstrip()  # taking the first in the list to monitor during the training
+    label = labels[2].rstrip()
     # ------------------------------------------------------------------------------
 
 
@@ -73,7 +73,7 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
 
     # create empty label in pair with transformed image
     image_tfm = image
-    label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+    label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
     label_tfm.SetOrigin(image_tfm.GetOrigin())
     label_tfm.SetDirection(image.GetDirection())
     label_tfm.SetSpacing(image_tfm.GetSpacing())
@@ -107,7 +107,7 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
         label_true = from_numpy_to_itk(label_true_np, image_tfm)
 
         # create empty label in pair with transformed image
-        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
         label_tfm.SetOrigin(image_tfm.GetOrigin())
         label_tfm.SetDirection(image_tfm.GetDirection())
         label_tfm.SetSpacing(image_tfm.GetSpacing())
@@ -234,7 +234,7 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
 
     print("{}: Evaluation complete".format(datetime.datetime.now()))
     # eliminate overlapping region using the weighted value
-    label_np = np.rint(np.float32(label_np) / np.float32(weight_np) + 0.01)
+    label_np = (np.float32(label_np) / np.float32(weight_np) + 0.01)
 
     # convert back to sitk space
     label_np = np.transpose(label_np, (2, 1, 0))
@@ -250,8 +250,8 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
 
     if resample is True:
 
-        label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='linear')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape, sitk.sitkLinear)
+        label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='bspline')
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape, sitk.sitkBSpline)
         label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())

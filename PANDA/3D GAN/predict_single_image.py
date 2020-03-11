@@ -83,7 +83,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     image = resacleFilter.Execute(image)
 
     # create empty label in pair with transformed image
-    label_tfm = sitk.Image(image.GetSize(), sitk.sitkUInt8)
+    label_tfm = sitk.Image(image.GetSize(), sitk.sitkFloat32)
     label_tfm.SetOrigin(image.GetOrigin())
     label_tfm.SetDirection(image.GetDirection())
     label_tfm.SetSpacing(image.GetSpacing())
@@ -108,7 +108,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
         image_tfm = from_numpy_to_itk(image_np, image_tfm)
 
         # create empty label in pair with transformed image
-        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkUInt8)
+        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
         label_tfm.SetOrigin(image_tfm.GetOrigin())
         label_tfm.SetDirection(image_tfm.GetDirection())
         label_tfm.SetSpacing(image_tfm.GetSpacing())
@@ -154,8 +154,8 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     label_tfm = roiFilter.Execute(label_tfm)
 
     # convert image to numpy array
-    image_np = sitk.GetArrayFromImage(image_tfm).astype(np.uint8)
-    label_np = sitk.GetArrayFromImage(label_tfm).astype(np.uint8)
+    image_np = sitk.GetArrayFromImage(image_tfm)
+    label_np = sitk.GetArrayFromImage(label_tfm)
 
     label_np = np.asarray(label_np, np.float32)
 
@@ -222,7 +222,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
 
     print("{}: Evaluation complete".format(datetime.datetime.now()))
     # eliminate overlapping region using the weighted value
-    label_np = np.rint(np.float32(label_np) / np.float32(weight_np) + 0.01)
+    label_np = (np.float32(label_np) / np.float32(weight_np) + 0.01)
 
     # --------------- Coming back to (344,344,127) dimension ----------------------------------------
     if Padding is True:
@@ -242,8 +242,8 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
 
     if resample is True:
 
-        label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='linear')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
+        label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
