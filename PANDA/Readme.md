@@ -73,7 +73,7 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 python3 main.py --Create_training_test_dataset=True --Do_you_wanna_train=True  --Do_you_wanna_check_accuracy=True --patch_size=(128,128,64)
 ```
 Sample of the logger, which helps to monitor the training process
-![logger](epoch_80.PNG)
+![logger](Images/epoch_80.png)
 
 4) Launch the inference on only one image (example):
 
