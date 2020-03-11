@@ -48,17 +48,19 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
 
-- data_generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
+- data_generator.py / NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
 
-- check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
+- check_loader_patches: Shows paired low and high dose patches fed to the 3DGANGan during the training  
 
-- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
+- generator.py / discriminator.py / DCGAN.py: the architecture of the 3DGAN.
 
-- main.py: Runs the training and the prediction on the training and validation dataset.
+- main.py: Runs the training and the inference on the training and validation dataset.
 
-- logger.py: Generates sample images and histograms to monitor the training.
+- logger.py: Generates sample images and histograms to monitor the training (called by the main.py).
 
-- predict.py: It launches the inference on training and validation data in the main.py
+- predict.py: It launches the inference on training and validation data (called by the main.py).
 
-- predict_single_image.py: It launches the inference on a single input image chosen by the user.
+- predict_single_image.py: It launches the inference on a single input image chosen by the user (not called by the main.py).
+
+# Tutorial for 3DGAN
 
