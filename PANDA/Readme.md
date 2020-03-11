@@ -21,7 +21,6 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 - MATLAB R2016a or higher
 - SPM 12
 - Python 3
-- github repo: git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 # MATLAB scripts and their function 
 
@@ -29,28 +28,11 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - convertDicomtoNii.m: Converts the Dicom series in a folder to nifti files, using SPM.
 
-- cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 128 (U-net dependency)
-
-- prepMedImgForGan.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
-
-- prepDataForTraining.m: A lazy function which i wrote for sorting the converted 2D png or jpg images into 'test','train', and 'val' (validation) folders. The ratio is automatically defined: 60% of total datasets for training, 20% for testing and 20% validation.
-
-- convertGanOutputToNativeSpace.m: Converts GAN Nifti files to native Nifti files which are compatible for image registration (344 x 344 x 127).
-
-- callPytorchFor2DGAN.m: Creates an '.command' file to run the pytorch scripts for generating image-pairs (A-B)
-
-- createGIF.m: creates a GIF animation from a series of time-series images (ideally).
-
-- removeEmptySlices.m: Removes empty image pairs before GAN training (prevents unwanted calculation).
-
-
 # Python scripts and their function
-
-- Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
 
 - data_generator.py / NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
 
-- check_loader_patches: Shows paired low and high dose patches fed to the 3DGANGan during the training  
+- check_loader_patches: Shows paired early and late frames patches fed to the 3DGANGan during the training  
 
 - generator.py / discriminator.py / DCGAN.py: the architecture of the 3DGAN.
 
@@ -66,7 +48,7 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom in Nifti format. All images in this study are produced with a PET/MRI-Siemens Biograph mMR. Frames dimensions are 344x344x127. 
 
-2) Place low-dose frames in "Data_folder/volumes" folder and high-dose frames in "Data_folder/labels" folder. Be sure that low/high dose frames are correctly paired in the two folders.
+2) Place early-frames in "Data_folder/volumes" folder and late-frames in "Data_folder/labels" folder. Be sure that early/late frames are correctly paired in the two folders.
 
 3) Launch the pipeline for training and testing dataset (example): 
 ```console
@@ -78,10 +60,18 @@ Sample of the logger, which helps to monitor the training process
 4) Launch the inference on only one image (example):
 
 ```console
-python3 predict_single_image.py --image "path to low dose frame" --result "path to high dose to save" --gen_weights "path to the weights of the generator network"  --patch_size=(128,128,64)
+python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
 ```
 
+There are several parameters you can set; you can modify the default ones in the script or write them manually in the pipeline. The description for each one is in the main.py file
 
+## Citations
+
+Sample codes were taken as reference to implement PANDA. Here is the list of github repositories:
+
+- https://github.com/jackyko1991/vnet-tensorflow
+
+- https://github.com/joellliu/3D-GAN-for-MRI
 
 
 
