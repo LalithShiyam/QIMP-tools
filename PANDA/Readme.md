@@ -67,7 +67,7 @@ There are several parameters you can set; you can modify the default ones in the
 
 ## Citations
 
-Sample codes were taken as reference to implement PANDA. Here is the list of github repositories:
+To implement PANDA we were inspired by existing codes from other github contributors. Here is the list of github repositories:
 
 - https://github.com/jackyko1991/vnet-tensorflow
 
