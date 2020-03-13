@@ -45,10 +45,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--Use_GPU", action='store_true', default=True, help='Use the GPU')
-    parser.add_argument("--Select_GPU", type=int, default=2, help='Select the GPU')
+    parser.add_argument("--Select_GPU", default='1', help='Select the GPU')
     parser.add_argument("--Create_training_test_dataset", action='store_true', default=False, help='Divide the data for the training. If True, it creates a new list every time')
     parser.add_argument("--Do_you_wanna_train", action='store_true', default=True, help='Training will start')
-    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='PreLoad existing weights weights')
+    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=True, help='PreLoad existing weights weights')
     parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=False, help='Model will be tested after the training')
     parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
     parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii low dose images')
@@ -56,9 +56,8 @@ if __name__ == "__main__":
     parser.add_argument("--val_split", type=float, default=0.1, help='Split value for the validation data (0 to 1 float number)')
     parser.add_argument("--history_dir", type=str, default='./History', help='path where to save sample images during training')
     parser.add_argument("--weights", type=str, default='./History/weights', help='path to save the weights of the model')
-    parser.add_argument("--gen_weights", type=str, default='./History/weights/frame25.h5', help='generator weights to load')
+    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_epoch_80.h5', help='generator weights to load')
     parser.add_argument("--disc_weights", type=str, default='./History/weights/disc_weights_epoch_80.h5', help='discriminator weights to load')
-    parser.add_argument("--dcgan_weights", type=str, default='./History/weights/DCGAN_weights_epoch_80.h5', help='dcgan weights to load')
 
     # Training parameters
     parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
@@ -169,8 +168,6 @@ if __name__ == "__main__":
 
         # DCGAN
         dc_gan = DCGAN(generator=generator, discriminator=discriminator, input_dim=input_dim, patch_size=args.mini_patch_size)
-        if args.Do_you_wanna_load_weights is True:
-            discriminator.load_weights(args.dcgan_weights)
         dc_gan.summary()
 
         # Total Loss

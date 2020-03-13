@@ -28,8 +28,8 @@ parser.add_argument("--crop_background_size", type=int, default=[128, 128, 128],
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 # Inference parameters
-parser.add_argument("--stride_inplane", type=int, nargs=1, default=1, help="Stride size in 2D plane")
-parser.add_argument("--stride_layer", type=int, nargs=1, default=1, help="Stride size in z direction")
+parser.add_argument("--stride_inplane", type=int, nargs=1, default=32, help="Stride size in 2D plane")
+parser.add_argument("--stride_layer", type=int, nargs=1, default=32, help="Stride size in z direction")
 args = parser.parse_args()
 
 if args.Use_GPU is True:
