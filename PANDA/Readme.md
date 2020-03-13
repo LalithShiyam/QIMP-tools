@@ -62,6 +62,12 @@ Sample of the logger, which helps to monitor the training process
 ```console
 python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
 ```
+### Sample script inference
+```console
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+```
+
+
 
 There are several parameters you can set; you can modify the default ones in the script or write them manually in the pipeline. The description for each one is in the main.py file
 
