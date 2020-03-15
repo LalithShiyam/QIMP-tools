@@ -32,7 +32,7 @@ sortedNames=natsort(names);
 
 for lp=1:length(sortedNames)
 cd(pathToNiftiPET);
-disp(['Calculating gradient images for ',sortedNames{lp},'...'])
+disp(['Calculating gradient image for ',sortedNames{lp},'...'])
 img{lp}=niftiread(sortedNames{lp});
 gradImg{lp}=imgradient3(img{lp});
 gradImgName=['Gradient-image-',num2str(lp),'.nii'];
