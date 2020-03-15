@@ -25,12 +25,12 @@ mkdir('PANDA-gradient-images');
 where2Store=[where2Store,filesep,'PANDA-gradient-images'];
 cd(pathToNiftiPET)
 niftyFiles=dir('*nii');
-for lp=1:length(niftyFiles)
+parfor lp=1:length(niftyFiles)
 names{lp}=niftyFiles(lp).name;
 end
 sortedNames=natsort(names);
 
-for lp=1:length(sortedNames)
+parfor lp=1:length(sortedNames)
 cd(pathToNiftiPET);
 disp(['Calculating gradient image for ',sortedNames{lp},'...'])
 img{lp}=niftiread(sortedNames{lp});
