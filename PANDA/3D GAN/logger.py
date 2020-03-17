@@ -251,7 +251,7 @@ def plot_generated_batch(image,label, model, resample, resolution, crop_backgrou
     if resample is True:
 
         label = resample_sitk_image(label_tfm, spacing=image.GetSpacing(), interpolator='bspline')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape, sitk.sitkBSpline)
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
         label_np = sitk.GetArrayFromImage(label)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
