@@ -8,6 +8,18 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
 
+# Important note: DO IT FIRST!
+
+For the conditional GANs to work, the frames should have a minimal amount of activity distribution to start with. This can be evaluated with the aid of the two functions below. 
+
+  - genGradImg.m : generates a 3D gradient image for a given PET frame.
+  ```console
+pathToNiftiPETframe = 'your physical path';
+where2Store='where to store your gradient images';
+genGradImg(pathOfNiftiPETframes,output_dir)
+```
+  - shannon_entropy_fingerprinting.ipynb : calculates the a shannon-entropy fingerprint for each gradient image volume, and compares it to the shannon entropy of a reference gradient volume, in our case the gradient image of the late pet frame. Finally, the script calculates the absolute difference in shannon entropy of the compared gradient image vs the reference gradient image. If the absolute difference is less than 1, then this frame could be successfully used for GAN training.
+
 # Examples
 
 Sample images (axial and coronal views): on the left side are the early PET frames, in the middle the output of the 3D GAN and on the right side the corresponding late PET frame
@@ -21,7 +33,6 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 - MATLAB R2016a or higher
 - SPM 12
 - Python 3
-- github repo: git clone https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 # MATLAB scripts and their function 
 
@@ -29,36 +40,56 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - convertDicomtoNii.m: Converts the Dicom series in a folder to nifti files, using SPM.
 
-- cropNiftiForGan.m: Crops a PET nifti file of 344 x 344 x 127 into GAN compatible matrix size 256 x 256 x 128 (U-net dependency)
-
-- prepMedImgForGan.m: This script was mainly created for converting 3D PET images into 2D png or jpg images for using open-source tools of non-medical images.
-
-- prepDataForTraining.m: A lazy function which i wrote for sorting the converted 2D png or jpg images into 'test','train', and 'val' (validation) folders. The ratio is automatically defined: 60% of total datasets for training, 20% for testing and 20% validation.
-
-- convertGanOutputToNativeSpace.m: Converts GAN Nifti files to native Nifti files which are compatible for image registration (344 x 344 x 127).
-
-- callPytorchFor2DGAN.m: Creates an '.command' file to run the pytorch scripts for generating image-pairs (A-B)
-
-- createGIF.m: creates a GIF animation from a series of time-series images (ideally).
-
-- removeEmptySlices.m: Removes empty image pairs before GAN training (prevents unwanted calculation).
-
-
 # Python scripts and their function
 
-- Niftitest.py: Runs the 2D based Pix2pix inference on the .nii volumes and returns the late dose frame from the low dose frames. 
+- data_generator.py / NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
 
-- data_generator.py / NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN. 
+- check_loader_patches: Shows paired early and late frames patches fed to the 3DGANGan during the training  
 
-- check_loader_patches: Shows the low dose and high dose patches fed to the Gan during the training  
+- generator.py / discriminator.py / DCGAN.py: the architecture of the 3DGAN.
 
-- generator.py / discriminator.py / DCGAN.py: the architecture of the GAN.
+- main.py: Runs the training and the inference on the training and validation dataset.
 
-- main.py: Runs the training and the prediction on the training and validation dataset.
+- logger.py: Generates sample images and histograms to monitor the training (called by the main.py).
 
-- logger.py: Generates sample images and histograms to monitor the training.
+- predict.py: It launches the inference on training and validation data (called by the main.py).
 
-- predict.py: It launches the inference on training and validation data in the main.py
+- predict_single_image.py: It launches the inference on a single input image chosen by the user (not called by the main.py).
 
-- predict_single_image.py: It launches the inference on a single input image chosen by the user.
+# Tutorial for 3DGAN
+
+1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom in Nifti format. All images in this study are produced with a PET/MRI-Siemens Biograph mMR. Frames dimensions are 344x344x127. 
+
+2) Place early-frames in "Data_folder/volumes" folder and late-frames in "Data_folder/labels" folder. Be sure that early/late frames are correctly paired in the two folders.
+
+3) Launch the pipeline for training and testing dataset (example): 
+```console
+python3 main.py --Create_training_test_dataset=True --Do_you_wanna_train=True  --Do_you_wanna_check_accuracy=True --patch_size=(128,128,64)
+```
+Sample of the logger, which helps to monitor the training process
+![logger](Images/epoch_80.png)
+
+4) Launch the inference on only one image (example):
+
+```console
+python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
+```
+### Sample script inference
+```console
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+```
+
+
+
+There are several parameters you can set; you can modify the default ones in the script or write them manually in the pipeline. The description for each one is in the main.py file
+
+## Citations
+
+To implement PANDA we were inspired by existing codes from other github contributors. Here is the list of github repositories:
+
+- https://github.com/jackyko1991/vnet-tensorflow
+
+- https://github.com/joellliu/3D-GAN-for-MRI
+
+
 
