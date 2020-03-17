@@ -8,6 +8,18 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
 
+# Important note: DO IT FIRST!
+
+For the conditional GANs to work, the frames should have a minimal amount of activity distribution to start with. This can be evaluated with the aid of the two functions below. 
+
+  - genGradImg.m : generates a 3D gradient image for a given PET frame.
+  ```console
+pathToNiftiPETframe = 'your physical path';
+where2Store='where to store your gradient images';
+genGradImg(pathOfNiftiPETframes,output_dir)
+```
+  - shannon_entropy_fingerprinting.ipynb : calculates the a shannon-entropy fingerprint for each gradient image volume, and compares it to the shannon entropy of a reference gradient volume, in our case the gradient image of the late pet frame. Finally, the script calculates the absolute difference in shannon entropy of the compared gradient image vs the reference gradient image. If the absolute difference is less than 1, then this frame could be successfully used for GAN training.
+
 # Examples
 
 Sample images (axial and coronal views): on the left side are the early PET frames, in the middle the output of the 3D GAN and on the right side the corresponding late PET frame
@@ -62,6 +74,12 @@ Sample of the logger, which helps to monitor the training process
 ```console
 python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
 ```
+### Sample script inference
+```console
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+```
+
+
 
 There are several parameters you can set; you can modify the default ones in the script or write them manually in the pipeline. The description for each one is in the main.py file
 

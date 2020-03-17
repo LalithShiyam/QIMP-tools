@@ -239,9 +239,6 @@ if __name__ == "__main__":
                 disc_weights_path = os.path.join('./History/weights/disc_weights_epoch_%s.h5' % epoch)
                 discriminator.save_weights(disc_weights_path, overwrite=True)
 
-                DCGAN_weights_path = os.path.join('./History/weights/DCGAN_weights_epoch_%s.h5' % epoch)
-                dc_gan.save_weights(DCGAN_weights_path, overwrite=True)
-
             training_list = ["Dis logloss", D_log_loss_list, "GAN total", gan_total_loss_list, "GAN L1", gan_mae_list,
                              "GAN logloss", gan_log_loss_list]
 
