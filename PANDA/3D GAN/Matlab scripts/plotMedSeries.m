@@ -19,11 +19,12 @@ clc
 
 % create a plot 
 
-figure, 
+figure('units','normalized','outerposition',[0 0 1 1])
 for lp=1:(length(img)-1)
     subplot(6,6,lp)
     midSlice=size(img{lp},3);
     imshow(img{lp}(:,:,round(midSlice/2)),[])
+    zoom(3) 
     title(['PET-Frame: ',num2str(lp)])
 end
 
