@@ -243,7 +243,7 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     if resample is True:
 
         label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
+        # label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
