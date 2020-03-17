@@ -22,9 +22,9 @@ David Iommi, M.Sc.
 Quantitative Imaging and Medical Physics, Medical University of Vienna
 Date: 20.1.2020, Wien
 
-The network was realized to generate high-dose Pet images from low-dose frames.
+The network was realized to generate PET late-frames from PET low-frames.
 
-The main script is divided in 3 sequential branches: creation of training and testing dataset, training and validation of the model. The use can decide to execute all of them or to run only
+The main script is divided in 3 sequential branches: creation of training and testing dataset, training and validation of the model. The user can decide to execute all of them or to run only
 some of them by setting to True/False the respective options from the command line. Some parameters are set by default to a certain value. Please modify this value or digit from the command
 line the parameter's values you're interested to change.
 
