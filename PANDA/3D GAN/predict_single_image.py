@@ -20,7 +20,7 @@ parser.add_argument("--image", type=str, default='./Data_folder/volumes/HC014 te
 parser.add_argument("--result", type=str, default='./Data_folder/volumes/prova.nii', help='path to the .nii result to save')
 parser.add_argument("--gen_weights", type=str, default='./History/weights/frame25.h5', help='generator weights to load')
 # Training parameters
-parser.add_argument("--resample", default=True, help='Decide or not to resample the images to a new resolution')
+parser.add_argument("--resample", default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(2.086, 2.086, 2.031), help='New resolution')
 parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
 parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
