@@ -1,7 +1,9 @@
 function [] = plotMedSeries(pathOfNiftiSeries)
 
-% read the files in the folder
-
+%% read the files in the folder
+rows=5;
+columns=4;
+zoomFactor=1;
 cd(pathOfNiftiSeries)
 niftiFiles=dir('*nii');
 parfor lp=1:length(niftiFiles)
@@ -17,15 +19,16 @@ parfor lp=1:length(sortedNiftiFiles)
 end
 clc 
 
-% create a plot 
+%% create a plot 
 
 figure('units','normalized','outerposition',[0 0 1 1])
+%timeStamps=getPETmidTime;
 for lp=1:(length(img)-1)
-    subplot(6,6,lp)
+    subaxis(rows,columns,lp, 'sh', 0, 'sv', 0.001, 'padding', 0, 'margin', 0);
     midSlice=size(img{lp},3);
     imshow(img{lp}(:,:,round(midSlice/2)),[])
-    zoom(3) 
-    title(['PET-Frame: ',num2str(lp)])
+    zoom(zoomFactor) 
+    ylabel(['Frame: ',num2str((lp))],'fontweight','bold','fontsize',15)
 end
 
 end
