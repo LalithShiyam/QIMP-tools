@@ -10,26 +10,25 @@ import matplotlib.pyplot as plt
 import math
 import scipy
 
-''' The script run the inference on the single low dose image chosen by the user. Normalization is performed and images are scaled to interval values: 0-255.
+''' The script run the inference on the single early frame image by the user. Normalization is performed and images are scaled to interval values: 0-255.
     The path of the input image and the path to save the result must be specified in the command line '''
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use the GPU')
-parser.add_argument('--Select_GPU', type=int, default=1, help='Select the GPU')
-parser.add_argument("--image", type=str, default='./Data_folder/volumes/HC010 retest_PET_Frame_25.nii', help='path to the .nii low dose image')
-parser.add_argument("--result", type=str, default='./Data_folder/volumes/prova.nii.gz', help='path to the .nii result to save')
-parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_epoch_80.h5', help='generator weights to load')
+parser.add_argument('--Select_GPU', type=str, default='0', help='Select the GPU')
+parser.add_argument("--image", type=str, default='./Data_folder/volumes/HC014 test_MoCo_PET_Frame_25.nii', help='path to the .nii low dose image')
+parser.add_argument("--result", type=str, default='./Data_folder/volumes/prova.nii', help='path to the .nii result to save')
+parser.add_argument("--gen_weights", type=str, default='./History/weights/frame25.h5', help='generator weights to load')
 # Training parameters
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
-parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
+parser.add_argument("--new_resolution", type=float, default=(2.086, 2.086, 2.031), help='New resolution')
 parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
 parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
-parser.add_argument("--crop_background_size", type=int, default=[128, 128, 128], help='Crop the background of the images. Center is fixed in the centroid of the skull')
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 # Inference parameters
-parser.add_argument("--stride_inplane", type=int, nargs=1, default=32, help="Stride size in 2D plane")
-parser.add_argument("--stride_layer", type=int, nargs=1, default=32, help="Stride size in z direction")
+parser.add_argument("--stride_inplane", type=int, nargs=1, default=64, help="Stride size in 2D plane")
+parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
 args = parser.parse_args()
 
 if args.Use_GPU is True:
@@ -60,12 +59,15 @@ def prepare_batch(image, ijk_patch_indices):
     return image_batches
 
 
-# segment single image
-def image_evaluate(model, image_path, result_path, resample, resolution, crop_background, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size=1):
+# inference single image
+def inference(write_image, model, image_path, result_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size=1):
 
     # create transformations to image and labels
-    transforms = [
-        NiftiDataset.Resample(resolution, resample),
+    transforms1 = [
+        NiftiDataset.Resample(resolution, resample)
+    ]
+
+    transforms2 = [
         NiftiDataset.Padding((patch_size_x, patch_size_y, patch_size_z))
     ]
 
@@ -90,68 +92,21 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
 
     sample = {'image': image, 'label': label_tfm}
 
-    for transform in transforms:
+    for transform in transforms1:
+        sample = transform(sample)
+
+    # keeping track on how much padding will be performed before the inference
+    image_array = sitk.GetArrayFromImage(sample['image'])
+    pad_x = patch_size_x - (patch_size_x - image_array.shape[2])
+    pad_y = patch_size_x - (patch_size_y - image_array.shape[1])
+    pad_z = patch_size_z - (patch_size_z - image_array.shape[0])
+
+    image_pre_pad = sample['image']
+
+    for transform in transforms2:
         sample = transform(sample)
 
     image_tfm, label_tfm = sample['image'], sample['label']
-
-    # ----------------- Padding the image if the z dimension is not even ----------------------
-    image_np = sitk.GetArrayFromImage(image_tfm)
-    image_np = np.transpose(image_np, (2, 1, 0))
-
-    if (image_np.shape[2] % 2) == 0:
-        image_tfm = image_tfm
-        label_tfm = label_tfm
-        Padding = False
-    else:
-        image_np = np.pad(image_np, ((0,0), (0,0), (0, 1)), 'constant')
-        image_tfm = from_numpy_to_itk(image_np, image_tfm)
-
-        # create empty label in pair with transformed image
-        label_tfm = sitk.Image(image_tfm.GetSize(), sitk.sitkFloat32)
-        label_tfm.SetOrigin(image_tfm.GetOrigin())
-        label_tfm.SetDirection(image_tfm.GetDirection())
-        label_tfm.SetSpacing(image_tfm.GetSpacing())
-        Padding = True
-
-    # ----------------- Computing centroid of the image to crop the background -------------------
-    threshold = sitk.BinaryThresholdImageFilter()
-    threshold.SetLowerThreshold(1)
-    threshold.SetUpperThreshold(255)
-    threshold.SetInsideValue(1)
-    threshold.SetOutsideValue(0)
-
-    roiFilter = sitk.RegionOfInterestImageFilter()
-    roiFilter.SetSize([crop_background[0], crop_background[1], crop_background[2]])
-
-    if patch_size_x > crop_background[0]:
-        print('patch size x bigger than image dimension x')
-        quit()
-    if patch_size_y > crop_background[1]:
-        print('patch size y bigger than image dimension y')
-        quit()
-    if patch_size_z > crop_background[2]:
-        print('patch size y bigger than image dimension y')
-        quit()
-
-    image_mask = threshold.Execute(image_tfm)
-    image_mask = sitk.GetArrayFromImage(image_mask)
-    image_mask = np.transpose(image_mask, (2, 1, 0))
-
-    # centroid of the brain input for the inference
-    centroid = scipy.ndimage.measurements.center_of_mass(image_mask)
-
-    x_centroid = np.int(centroid[0])
-    y_centroid = np.int(centroid[1])
-
-    roiFilter.SetIndex([int(x_centroid - (crop_background[0])/2), int(y_centroid - (crop_background[1])/2), 0])
-    start_x_cropping = (int(x_centroid - (crop_background[0])/2))
-    start_y_cropping = (int(y_centroid - (crop_background[1])/2))
-    # ------------------------------------------------------------------------------------------------
-
-    # cropping the background
-    image_tfm = roiFilter.Execute(image_tfm)
-    label_tfm = roiFilter.Execute(label_tfm)
 
     # convert image to numpy array
     image_np = sitk.GetArrayFromImage(image_tfm)
@@ -162,6 +117,17 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     # unify numpy and sitk orientation
     image_np = np.transpose(image_np, (2, 1, 0))
     label_np = np.transpose(label_np, (2, 1, 0))
+
+    # ----------------- Padding the image if the z dimension still is not even ----------------------
+
+    if (image_np.shape[2] % 2) == 0:
+        Padding = False
+    else:
+        image_np = np.pad(image_np, ((0,0), (0,0), (0, 1)), 'constant')
+        label_np = np.pad(label_np, ((0, 0), (0, 0), (0, 1)), 'constant')
+        Padding = True
+
+    # ------------------------------------------------------------------------------------------------
 
     # a weighting matrix will be used for averaging the overlapped region
     weight_np = np.zeros(label_np.shape)
@@ -224,26 +190,25 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     # eliminate overlapping region using the weighted value
     label_np = (np.float32(label_np) / np.float32(weight_np) + 0.01)
 
-    # --------------- Coming back to (344,344,127) dimension ----------------------------------------
+    # removed the 1 pad on z
     if Padding is True:
         label_np = label_np[:, :, 0:(label_np.shape[2]-1)]
 
-    label = sitk.GetArrayFromImage(image)
-    label = np.transpose(label, (2, 1, 0))
-
-    label[start_x_cropping:start_x_cropping + crop_background[0], start_y_cropping:start_y_cropping + crop_background[1], :] = label_np
+    # removed all the padding
+    label_np = label_np[:pad_x, :pad_y, :pad_z]
 
     # convert back to sitk space
-    label = from_numpy_to_itk(label, image)
+    label = from_numpy_to_itk(label_np, image_pre_pad)
     # ---------------------------------------------------------------------------------------------
 
-    # save segmented label
+    # save label
     writer = sitk.ImageFileWriter()
 
     if resample is True:
 
-        label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')
-        # label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
+        print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
+        # label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')   # keep this commented
+        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
         label.SetDirection(image.GetDirection())
         label.SetOrigin(image.GetOrigin())
         label.SetSpacing(image.GetSpacing())
@@ -251,14 +216,18 @@ def image_evaluate(model, image_path, result_path, resample, resolution, crop_ba
     else:
         label = label
 
-    print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
     writer.SetFileName(result_path)
-    writer.Execute(label)
-    print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), result_path))
+    if write_image is True:
+        writer.Execute(label)
+        print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), result_path))
+
+    return label
 
 
-input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
-model = UNetGenerator(input_dim=input_dim)
-model.load_weights(args.gen_weights)
+if __name__ == "__main__":
 
-image_evaluate(model, args.image, args.result, args.resample, args.new_resolution, args.crop_background_size, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
+    input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
+    model = UNetGenerator(input_dim=input_dim)
+    model.load_weights(args.gen_weights)
+
+    result = inference(True, model, args.image, args.result, args.resample, args.new_resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
