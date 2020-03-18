@@ -2,7 +2,7 @@ from __future__ import division, print_function
 from functools import partial
 from keras import backend as K
 from utils.data_generator import *
-from logger import *
+from predict_single_image import from_numpy_to_itk, prepare_batch, inference
 from networks.generator import UNetGenerator
 from networks.discriminator import PatchGanDiscriminator, get_patches
 from networks.DCGAN import DCGAN
@@ -11,6 +11,7 @@ from keras.utils import generic_utils as keras_generic_utils
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 import time
+from logger import *
 import tensorflow as tf
 from predict import *
 import argparse
@@ -34,7 +35,6 @@ Generative Adversarial Networks. NIPS, 2014)
 The generator can take as input the entire volume or patches of the volume. The patches will reconstruct the original volume after the inference is run. 
 The discriminator can take as input the output of the generator or its sub-patches. The user has to choose this option.  
 
-
 '''
 
 if __name__ == "__main__":
@@ -45,18 +45,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--Use_GPU", action='store_true', default=True, help='Use the GPU')
-    parser.add_argument("--Select_GPU", default='1', help='Select the GPU')
+    parser.add_argument("--Select_GPU", default='0', help='Select the GPU')
     parser.add_argument("--Create_training_test_dataset", action='store_true', default=False, help='Divide the data for the training. If True, it creates a new list every time')
-    parser.add_argument("--Do_you_wanna_train", action='store_true', default=True, help='Training will start')
-    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=True, help='PreLoad existing weights weights')
-    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=False, help='Model will be tested after the training')
+    parser.add_argument("--Do_you_wanna_train", action='store_true', default=False, help='Training will start')
+    parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='PreLoad existing weights for the training')
+    parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=True, help='Model will be tested after the training')
     parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
     parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii low dose images')
     parser.add_argument("--labels_folder", type=str, default='./Data_folder/labels', help='path to the .nii high dose images')
     parser.add_argument("--val_split", type=float, default=0.1, help='Split value for the validation data (0 to 1 float number)')
     parser.add_argument("--history_dir", type=str, default='./History', help='path where to save sample images during training')
     parser.add_argument("--weights", type=str, default='./History/weights', help='path to save the weights of the model')
-    parser.add_argument("--gen_weights", type=str, default='./History/weights/gen_weights_epoch_80.h5', help='generator weights to load')
+    parser.add_argument("--gen_weights", type=str, default='./History/weights/frame25.h5', help='generator weights to load')
     parser.add_argument("--disc_weights", type=str, default='./History/weights/disc_weights_epoch_80.h5', help='discriminator weights to load')
 
     # Training parameters
@@ -64,13 +64,12 @@ if __name__ == "__main__":
     parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
     parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
     parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
-    parser.add_argument("--crop_background_size", type=int, default=[128, 128, 128], help='Crop the background of the images. Center is fixed in the centroid of the skull')
     parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
     parser.add_argument("--mini_patch", action='store_true', default=True, help=' If True, discriminator and DCgan will be trained with subpatches of the generator input')
     parser.add_argument("--mini_patch_size", type=int, nargs=3, default=[64, 64, 64], help="Input dimension for the discriminator and DCgan")
     parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
     parser.add_argument("--drop_ratio", type=float, nargs=1, default=0, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
-    parser.add_argument("--min_pixel", type=int, nargs=1, default=1, help="Percentage of minimum non-zero pixels in the cropped label")
+    parser.add_argument("--min_pixel", type=int, nargs=1, default=19, help="Percentage of minimum non-zero pixels in the cropped label")
 
     parser.add_argument("--lr", type=float, nargs=1, default=0.0002, help="learning rate")
     parser.add_argument("--beta_1", type=float, nargs=1, default=0.5, help="beta 1")
@@ -79,8 +78,8 @@ if __name__ == "__main__":
     parser.add_argument("--nb_epoch", type=int, nargs=1, default=160, help="number of epochs")
     parser.add_argument("--n_images_per_epoch", type=int, nargs=1, default=200, help="Number of images per epoch")
     # Inference parameters
-    parser.add_argument("--stride_inplane", type=int, nargs=1, default=1, help="Stride size in 2D plane")
-    parser.add_argument("--stride_layer", type=int, nargs=1, default=1, help="Stride size in z direction")
+    parser.add_argument("--stride_inplane", type=int, nargs=1, default=32, help="Stride size in 2D plane")
+    parser.add_argument("--stride_layer", type=int, nargs=1, default=32, help="Stride size in z direction")
     args = parser.parse_args()
 
     if args.Use_GPU is True:
@@ -126,8 +125,6 @@ if __name__ == "__main__":
         print('Number of training samples:', n_samples_train, '  Number of validation samples:', n_samples_val)
 
         trainTransforms = [
-            NiftiDataset.Padding((344, 344, 128)),  # add one padded row to the original PET output
-            NiftiDataset.CropBackground((args.crop_background_size[0], args.crop_background_size[1], args.crop_background_size[2])),
             NiftiDataset.Resample(args.new_resolution, args.resample),
             NiftiDataset.Augmentation(),
             NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
@@ -226,7 +223,7 @@ if __name__ == "__main__":
                                                 ("GAN logloss", gan_log_loss)])
 
             plot_generated_batch(image=args.save_dir + '/' + 'val.txt', label=args.save_dir + '/' + 'val_labels.txt',model=generator, resample=args.resample, resolution=args.new_resolution,
-                                 crop_background=args.crop_background_size,patch_size_x=args.patch_size[0], patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1,
+                                 patch_size_x=args.patch_size[0], patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1,
                                  epoch=epoch_count)
 
             epoch_count += 1
@@ -252,14 +249,16 @@ if __name__ == "__main__":
         model = UNetGenerator(input_dim=input_dim)
         model.load_weights(args.gen_weights)
 
+        print("Start inference on testing data..")
         check_accuracy_model(model, images_list=args.save_dir + '/' + 'val.txt', resample=args.resample,
-                             new_resolution=args.new_resolution, crop_background=args.crop_background_size,
+                             new_resolution=args.new_resolution,
                              patch_size_x=args.patch_size[0],patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],
                              stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1)
 
+        print("Start inference on training data..")
         check_accuracy_model(model, images_list=args.save_dir + '/' + 'train.txt',
                              resample=args.resample,
-                             new_resolution=args.new_resolution, crop_background=args.crop_background_size, patch_size_x=args.patch_size[0],
+                             new_resolution=args.new_resolution, patch_size_x=args.patch_size[0],
                              patch_size_y=args.patch_size[1], patch_size_z=args.patch_size[2],
                              stride_inplane=args.stride_inplane, stride_layer=args.stride_layer, batch_size=1)
 

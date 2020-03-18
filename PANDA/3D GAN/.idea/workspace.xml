@@ -1,10 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93bdc7e2-61a6-4ade-9549-49b5705fa8e8" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/3D GAN.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/3D GAN.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    <list default="true" id="49a0bc9e-c0a6-4444-bbdd-24ee173929bf" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/3D GAN.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/checkFileFormat.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/convertDicomtoNii.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/convertGanOutputToNativeSpace.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/createGIF.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/cropNiftiForGan.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/genGradImg.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/Matlab scripts/predictLateFrames.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/checkFileFormat.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/check_loader_patches.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/convertDicomtoNii.m" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/logger.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/networks/DCGAN.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/networks/discriminator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/networks/generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/predict_single_image.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/shannon_entropy_fingerprinting.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/utils/NiftiDataset.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../3D GAN/utils/data_generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/PANDA-workflow.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/Panda-logo.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/epoch_80.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/gan_axial.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/gan_coronal.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/high_dose_axial.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/high_dose_coronal.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/low_dose_axial.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Images/low_dose_coronal.gif" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Readme.md" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,29 +47,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/predict.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3006">
-              <caret line="241" column="8" selection-start-line="241" selection-start-column="8" selection-end-line="241" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/main.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2108">
-              <caret line="95" column="45" lean-forward="true" selection-start-line="95" selection-start-column="45" selection-end-line="95" selection-end-column="45" />
-              <folding>
-                <element signature="e#0#47#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
@@ -43,29 +55,30 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/predict.py" />
-        <option value="$PROJECT_DIR$/predict_single_image.py" />
+        <option value="$PROJECT_DIR$/check_loader_patches.py" />
         <option value="$PROJECT_DIR$/logger.py" />
+        <option value="$PROJECT_DIR$/predict.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/predict_single_image.py" />
       </list>
     </option>
   </component>
   <component name="ProjectConfigurationFiles">
     <option name="files">
       <list>
-        <option value="$PROJECT_DIR$/.idea/3D GAN.iml" />
+        <option value="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
+        <option value="$PROJECT_DIR$/.idea/3D GAN Multicenters.iml" />
         <option value="$PROJECT_DIR$/.idea/vcs.xml" />
         <option value="$PROJECT_DIR$/.idea/modules.xml" />
         <option value="$PROJECT_DIR$/.idea/misc.xml" />
-        <option value="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-10" />
-    <option name="y" value="-10" />
-    <option name="width" value="2394" />
-    <option name="height" value="1350" />
+    <option name="x" value="3" />
+    <option name="y" value="1" />
+    <option name="width" value="1934" />
+    <option name="height" value="1037" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -73,27 +86,27 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
-              <item name="3D GAN" type="b2602c69:ProjectViewProjectNode" />
-              <item name="3D GAN" type="462c0819:PsiDirectoryNode" />
+              <item name="3D GAN Multicenters" type="b2602c69:ProjectViewProjectNode" />
+              <item name="3D GAN Multicenters" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
-              <item name="3D GAN" type="b2602c69:ProjectViewProjectNode" />
-              <item name="3D GAN" type="462c0819:PsiDirectoryNode" />
-              <item name="utils" type="462c0819:PsiDirectoryNode" />
+              <item name="3D GAN Multicenters" type="b2602c69:ProjectViewProjectNode" />
+              <item name="3D GAN Multicenters" type="462c0819:PsiDirectoryNode" />
+              <item name="networks" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../3D GAN Siemens Biograph mMR" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
@@ -108,29 +121,100 @@
       </list>
     </option>
   </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="check_loader_patches" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="3D GAN Multicenters" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/check_loader_patches.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="3D GAN Multicenters" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="predict_single_image" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="3D GAN Multicenters" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/predict_single_image.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.predict_single_image" />
+        <item itemvalue="Python.check_loader_patches" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="93bdc7e2-61a6-4ade-9549-49b5705fa8e8" name="Default Changelist" comment="" />
-      <created>1584453786745</created>
+      <changelist id="49a0bc9e-c0a6-4444-bbdd-24ee173929bf" name="Default Changelist" comment="" />
+      <created>1584463659486</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1584453786745</updated>
+      <updated>1584463659486</updated>
     </task>
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14857745" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.15384616" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32936078" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -145,47 +229,96 @@
     </layout>
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/utils/data_generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/utils/NiftiDataset.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="159">
-          <caret line="906" column="85" lean-forward="true" selection-start-line="906" selection-start-column="85" selection-end-line="906" selection-end-column="85" />
+        <state relative-caret-position="-10812">
           <folding>
             <element signature="e#0#24#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/predict_single_image.py">
+    <entry file="file://$PROJECT_DIR$/check_loader_patches.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4046">
-          <caret line="246" column="8" selection-start-line="246" selection-start-column="8" selection-end-line="246" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/logger.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="244">
-          <caret line="254" column="8" selection-start-line="254" selection-start-column="8" selection-end-line="254" selection-end-column="8" />
+        <state relative-caret-position="187">
+          <caret line="11" column="83" selection-start-line="11" selection-start-column="83" selection-end-line="11" selection-end-column="83" />
           <folding>
-            <element signature="e#0#24#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2108">
-          <caret line="95" column="45" lean-forward="true" selection-start-line="95" selection-start-column="45" selection-end-line="95" selection-end-column="45" />
-          <folding>
-            <element signature="e#0#47#0" expanded="true" />
+            <element signature="e#0#32#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/predict.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3006">
-          <caret line="241" column="8" selection-start-line="241" selection-start-column="8" selection-end-line="241" selection-end-column="8" />
+        <state relative-caret-position="493">
+          <caret line="44" lean-forward="true" selection-start-line="44" selection-end-line="44" />
+          <folding>
+            <element signature="e#47#79#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/networks/DCGAN.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#51#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/networks/discriminator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-459">
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/networks/generator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3213">
+          <folding>
+            <element signature="e#0#42#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/logger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-561">
+          <caret line="6" selection-start-line="6" selection-end-line="6" selection-end-column="76" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-2032">
+          <caret line="47" column="50" selection-start-line="47" selection-start-column="50" selection-end-line="47" selection-end-column="50" />
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/predict_single_image.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="22" lean-forward="true" selection-start-column="22" selection-end-column="22" />
+          <folding>
+            <element signature="e#2498#2741#0" />
+            <element signature="e#2793#3206#0" />
+          </folding>
         </state>
       </provider>
     </entry>
