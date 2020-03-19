@@ -39,8 +39,8 @@ parfor lp=1:length(sortedNames)
 cd(pathToNiftiPET);
 disp(['Calculating gradient image for ',sortedNames{lp},'...'])
 img{lp}=niftiread(sortedNames{lp});
-gradImg{lp}=imgradient3(img{lp})/44;
-gradImgName=['Gradient-image-',num2str(lp),'.nii'];
+gradImg{lp}=imgradient3(img{lp})/normalizationFactor;
+gradImgName=['Gradient-image-',sortedNames{lp}];
 niftiwrite(gradImg{lp},gradImgName);
 movefile(gradImgName,where2Store)
 end
