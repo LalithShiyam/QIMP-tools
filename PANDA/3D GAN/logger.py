@@ -28,7 +28,6 @@ def plot_generated_batch(image, label, model, resample, resolution, patch_size_x
     result = inference(False, model, image, './prova.nii', resample, resolution, patch_size_x,
                        patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size)
 
-    print("{}: Evaluation complete".format(datetime.datetime.now()))
     # save
     writer = sitk.ImageFileWriter()
     label_directory = 'History/Epochs_training/epoch_%s' % epoch
@@ -70,18 +69,14 @@ def plot_generated_batch(image, label, model, resample, resolution, patch_size_x
     plt.subplot(5, 3, 11), plt.imshow(predicted[_4], 'gray'), plt.axis('off'), plt.title('GAN')
     plt.subplot(5, 3, 12), plt.imshow(second_mod[_4], 'gray'), plt.axis('off'), plt.title('Late Frame')
 
-    plt.subplot(5, 3, 13, autoscale_on=True), plt.hist(first_mod.flatten(), bins=256,
-                                                       range=(3, (first_mod.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('Early Frame histogram')
-    plt.subplot(5, 3, 14, autoscale_on=True), plt.hist(predicted.flatten(), bins=256,
-                                                       range=(3, (predicted.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('GAN histogram')
-    plt.subplot(5, 3, 15, autoscale_on=True), plt.hist(second_mod.flatten(), bins=256,
-                                                       range=(3, (second_mod.flatten()).max()), density=0,
-                                                       facecolor='red', align='right', alpha=0.75,
-                                                       histtype='stepfilled'), plt.title('Late Frame histogram')
+    plt.subplot(5, 3, 13, autoscale_on=True), plt.hexbin((first_mod / first_mod.max()), (second_mod / second_mod.max()),
+                                                         bins='log', cmap=plt.cm.Blues), plt.title('NMI Early-Late frame')
+
+    plt.subplot(5, 3, 14, autoscale_on=True), plt.hexbin((predicted / predicted.max()), (second_mod / second_mod.max()),
+                                                         bins='log', cmap=plt.cm.Blues), plt.title('NMI GAN-Late frame')
+
+    plt.subplot(5, 3, 15, autoscale_on=True), plt.hexbin((second_mod / second_mod.max()), (second_mod / second_mod.max()), bins='log',
+                                                         cmap=plt.cm.Blues), plt.title('NMI Late-Late frame')
 
     plt.savefig('History/Epochs_training/epoch_%s.png' % epoch)
     plt.close()
