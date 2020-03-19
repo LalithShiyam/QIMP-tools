@@ -50,17 +50,19 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - main.py: Runs the training and the inference on the training and validation dataset.
 
-- logger.py: Generates sample images and histograms to monitor the training (called by the main.py).
+- logger.py: Generates sample images to monitor the training.
 
-- predict.py: It launches the inference on training and validation data (called by the main.py).
+- predict.py: It launches the inference on training and validation data.
 
-- predict_single_image.py: It launches the inference on a single input image chosen by the user (not called by the main.py).
+- predict_single_image.py: It launches the inference on a single input image chosen by the user.
 
 # Tutorial for 3DGAN
 
-1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom in Nifti format. All images in this study are produced with a PET/MRI-Siemens Biograph mMR. Frames dimensions are 344x344x127. 
+## Training:
 
-2) Place early-frames in "Data_folder/volumes" folder and late-frames in "Data_folder/labels" folder. Be sure that early/late frames are correctly paired in the two folders.
+1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom files in Nifti format.
+
+2) Place early-frames in "./3D GAN/Data_folder/volumes" folder and late-frames in "./3D GAN/Data_folder/labels" folder. Be sure that early/late frames are correctly paired in the two folders.
 
 3) Launch the pipeline for training and testing dataset (example): 
 ```console
@@ -69,7 +71,12 @@ python3 main.py --Create_training_test_dataset=True --Do_you_wanna_train=True  -
 Sample of the logger, which helps to monitor the training process
 ![logger](Images/epoch_80.png)
 
-4) Launch the inference on only one image (example):
+There are several parameters you can set for the training; you can modify the default ones in the source code or type them from the pipeline. The description for each parameter included is in the main.py source file.
+Please open it to read the descriptions if you want to train on your own data.
+
+## Inference:
+
+Launch the inference on only one image (example):
 
 ```console
 python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
@@ -78,10 +85,6 @@ python3 predict_single_image.py --image "path to early frame" --result "path whe
 ```console
 C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
 ```
-
-
-
-There are several parameters you can set; you can modify the default ones in the script or write them manually in the pipeline. The description for each one is in the main.py file
 
 ## Citations
 
