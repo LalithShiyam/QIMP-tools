@@ -41,6 +41,9 @@ if isempty(imgFiles)
     imgFiles=dir('*png*');
 end
 
+if isempty(imgFiles)
+    imgFiles=dir('*tif*');
+end
 parfor lp=1:length(imgFiles)
     imgStack{lp}=imread(imgFiles(lp).name);
 end
@@ -60,9 +63,9 @@ for lp = 1:length(imgStack)
       [imind,cm] = rgb2ind(im,256); 
       % Write to the GIF File 
       if lp == 1 
-          imwrite(imind,cm,GifFileName,'gif', 'DelayTime',0.2,'Loopcount',inf); 
+          imwrite(imind,cm,GifFileName,'gif', 'DelayTime',1,'Loopcount',inf); 
       else 
-          imwrite(imind,cm,GifFileName,'gif','DelayTime',0.2,'WriteMode','append'); 
+          imwrite(imind,cm,GifFileName,'gif','DelayTime',1,'WriteMode','append'); 
       end 
 end
 close all
