@@ -12,4 +12,4 @@ This program converts low-dose CT images (from Siemens mCT) to CT attenuation ma
 # Requirements
 
 - SPM12
-- >= MATLAB R2016a
+- MATLAB R2016a +
