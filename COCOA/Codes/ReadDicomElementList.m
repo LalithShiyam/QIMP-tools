@@ -24,6 +24,9 @@ function elementlist=ReadDicomElementList(fname)
 %   Elements = ReadDicomElementList('images\example.dcm');
 %
 % Function is written by D.Kroon University of Twente (October 2010)
+% Update by Ivo Rausch (20.4.2020): Canged path of 'DicomTagDictionary.mat' to have it as it is in the COCOA/Codes folder
+% 
+
 
 % Display a file choose box if not provide as function input
 if(nargin<1)
@@ -57,7 +60,7 @@ end
 functionname='ReadDicomElementList.m';
 functiondir=which(functionname);
 functiondir=functiondir(1:end-length(functionname));
-load([functiondir 'Dictonary/DicomTagDictionary.mat']); 
+load([functiondir 'DicomTagDictionary.mat']); 
 
 % Read all tags until, the PixelData is reached
 ntags=0; elementlist=struct;
