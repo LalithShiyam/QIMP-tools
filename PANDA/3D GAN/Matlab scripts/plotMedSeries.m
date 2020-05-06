@@ -1,9 +1,9 @@
 function [] = plotMedSeries(pathOfNiftiSeries)
 
 %% read the files in the folder
-rows=6;
-columns=6;
-zoomFactor=3.5;
+rows=5;
+columns=4;
+zoomFactor=1;
 cd(pathOfNiftiSeries)
 niftiFiles=dir('*nii');
 parfor lp=1:length(niftiFiles)
@@ -30,12 +30,4 @@ for lp=1:(length(img)-1)
     zoom(zoomFactor) 
     ylabel(['Frame: ',num2str((lp))],'fontweight','bold','fontsize',15)
 end
-figure('units','normalized','outerposition',[0 0 1 1])
-for lp=1:(length(img)-1)
-    subaxis(rows,columns,lp,'sh',0,'sv',0.001,'padding',0,'margin',0);
-    dummyImg=img{lp};
-    voxValues=dummyImg(:);
-    newVoxVal=voxValues(voxValues<2);
-    histogram(newVoxVal)
-    ylabel(['Histogram for frame: ',num2str(lp)],'fontweight','bold','fontsize',5)
 end

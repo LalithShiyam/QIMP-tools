@@ -40,7 +40,8 @@ cd(pathToNiftiPET);
 disp(['Calculating gradient image for ',sortedNames{lp},'...'])
 img{lp}=niftiread(sortedNames{lp});
 gradImg{lp}=imgradient3(img{lp})/normalizationFactor;
-gradImgName=['Gradient-image-',sortedNames{lp}];
+gradImgName=[sortedNames{lp}];
+%gradImgName=['Gradient-image-',sortedNames{lp}];
 niftiwrite(gradImg{lp},gradImgName);
 movefile(gradImgName,where2Store)
 end
