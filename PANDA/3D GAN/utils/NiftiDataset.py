@@ -8,6 +8,17 @@ from sklearn.model_selection import train_test_split
 import scipy
 
 
+
+# ------- Swithes -------
+
+interpolator_image = sitk.sitkBSpline                  # interpolator image
+interpolator_label = sitk.sitkBSpline                  # interpolator label
+
+_interpolator_image = 'bspline'          # interpolator image
+_interpolator_label = 'bspline'          # interpolator label
+
+Segmentation = False
+
 # ------------------------------------- Functions ---------------------------------------
 def write_list(name, my_list):
     with open(name, 'w') as f:
@@ -44,7 +55,11 @@ def lstFiles(Path):
     images_list = []  # create an empty list, the raw image data files is stored here
     for dirName, subdirList, fileList in os.walk(Path):
         for filename in fileList:
-            if ".nii" in filename.lower():
+            if ".nii.gz" in filename.lower():
+                images_list.append(os.path.join(dirName, filename))
+            elif ".nii" in filename.lower():
+                images_list.append(os.path.join(dirName, filename))
+            elif ".nrrd" in filename.lower():
                 images_list.append(os.path.join(dirName, filename))
 
     images_list = sorted(images_list, key=numericalSort)
@@ -202,7 +217,7 @@ def matrix_from_axis_angle(a):
 
 def resample_image(image, transform):
     reference_image = image
-    interpolator = sitk.sitkBSpline
+    interpolator = interpolator_image
     default_value = 0
     return sitk.Resample(image, reference_image, transform,
                          interpolator, default_value)
@@ -210,11 +225,9 @@ def resample_image(image, transform):
 
 def resample_label(image, transform):
     reference_image = image
-    # interpolator = sitk.sitkNearestNeighbor
-    interpolator = sitk.sitkBSpline
+    interpolator = interpolator_label
     default_value = 0
-    return sitk.Resample(image, reference_image, transform,
-                         interpolator, default_value)
+    return sitk.Resample(image, reference_image, transform, interpolator, default_value)
 
 
 def get_center(img):
@@ -301,7 +314,7 @@ def brightness(image):
     array = array + c
 
     array[array >= max] = max
-    array[array <= 0] = 0
+    array[array <= min] = min
 
     img = sitk.GetImageFromArray(np.transpose(array, axes=(2, 1, 0)))
     img.SetDirection(direction)
@@ -322,8 +335,7 @@ def contrast(image):
     IOD = np.sum(array)
     luminanza = int(IOD / ntotpixel)
 
-    max = np.amax(array)
-    c = np.random.randint(-5, 5)
+    c = np.random.randint(-10, 10)
 
     d = array - luminanza
     dc = d * abs(c) / 100
@@ -336,8 +348,6 @@ def contrast(image):
         J = array - dc
         J[J >= 255] = 255
         J[J <= 0] = 0
-
-    J = J.astype(int)
 
     img = sitk.GetImageFromArray(np.transpose(J, axes=(2, 1, 0)))
     img.SetDirection(direction)
@@ -364,11 +374,26 @@ def translateit(image, offset, isseg=False):
 
     return img
 
+
+def adapt_eq_histogram(image):
+
+    adapt = sitk.AdaptiveHistogramEqualizationImageFilter()
+    adapt.SetAlpha(0.9)
+    adapt.SetBeta(0.6)
+    image = adapt.Execute(image)  # set mean and std deviation
+
+    normalizeFilter = sitk.NormalizeImageFilter()
+    resacleFilter = sitk.RescaleIntensityImageFilter()
+    resacleFilter.SetOutputMaximum(255)
+    resacleFilter.SetOutputMinimum(0)
+    image = normalizeFilter.Execute(image)  # set mean and std deviation
+    image = resacleFilter.Execute(image)  # set intensity 0-255
+
+    return image
+
 # --------------------------------------------------------------------------------------
 
 class NiftiDataset(object):
-
-
     """
     load image-label pair for training, testing and inference.
     Currently only support linear interpolation method
@@ -423,18 +448,22 @@ class NiftiDataset(object):
 
         if self.train:
             label = self.read_image(label_path)
-            label = Normalization(label)  # set intensity 0-255
+            if Segmentation is False:
+                label = Normalization(label)  # set intensity 0-255
             castImageFilter.SetOutputPixelType(self.bit)
             label = castImageFilter.Execute(label)
 
         elif self.test:
             label = self.read_image(label_path)
-            label = Normalization(label)  # set intensity 0-255
+            if Segmentation is False:
+                label = Normalization(label)  # set intensity 0-255
             castImageFilter.SetOutputPixelType(self.bit)
             label = castImageFilter.Execute(label)
 
         else:
-            label = sitk.Image(image.GetSize(), self.bit)
+            label = sitk.Image(image.GetSize(), self.bit)  # if it´s not train, create a new image with same size and spacing
+            if Segmentation is False:
+                label = Normalization(label)  # set intensity 0-255
             label.SetOrigin(image.GetOrigin())
             label.SetSpacing(image.GetSpacing())
 
@@ -444,9 +473,11 @@ class NiftiDataset(object):
             for transform in self.transforms:
                 sample = transform(sample)
 
-        # convert sample to tf tensors
         image_np = sitk.GetArrayFromImage(sample['image'])
         label_np = sitk.GetArrayFromImage(sample['label'])
+
+        if Segmentation is True:
+            label_np = np.around(label_np)
 
         # to unify matrix dimension order between SimpleITK([x,y,z]) and numpy([z,y,x])  (actually it´s the contrary)
         image_np = np.transpose(image_np, (2, 1, 0))
@@ -466,7 +497,6 @@ def Normalization(image):
     resacleFilter = sitk.RescaleIntensityImageFilter()
     resacleFilter.SetOutputMaximum(255)
     resacleFilter.SetOutputMinimum(0)
-
     image = normalizeFilter.Execute(image)  # set mean and std deviation
     image = resacleFilter.Execute(image)  # set intensity 0-255
 
@@ -491,10 +521,8 @@ class StatisticalNormalization(object):
         intensityWindowingFilter = sitk.IntensityWindowingImageFilter()
         intensityWindowingFilter.SetOutputMaximum(255)
         intensityWindowingFilter.SetOutputMinimum(0)
-        intensityWindowingFilter.SetWindowMaximum(
-            statisticsFilter.GetMean() + self.sigma * statisticsFilter.GetSigma());
-        intensityWindowingFilter.SetWindowMinimum(
-            statisticsFilter.GetMean() - self.sigma * statisticsFilter.GetSigma());
+        intensityWindowingFilter.SetWindowMaximum(statisticsFilter.GetMean() + self.sigma * statisticsFilter.GetSigma());
+        intensityWindowingFilter.SetWindowMinimum(statisticsFilter.GetMean() - self.sigma * statisticsFilter.GetSigma());
 
         image = intensityWindowingFilter.Execute(image)
 
@@ -522,29 +550,6 @@ class ManualNormalization(object):
         intensityWindowingFilter.SetWindowMinimum(self.windowMin);
 
         image = intensityWindowingFilter.Execute(image)
-
-        return {'image': image, 'label': label}
-
-
-class LaplacianRecursive(object):
-    """
-    Laplacian recursive image filter
-    """
-
-    def __init__(self, sigma):
-        self.name = 'Laplacianrecursiveimagefilter'
-        assert isinstance(sigma, (int, float))
-        self.sigma = sigma
-
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        filter = sitk.LaplacianRecursiveGaussianImageFilter()
-
-        filter.SetSigma(1.5)
-
-        image = filter.Execute(image)
-        label = filter.Execute(label)
 
         return {'image': image, 'label': label}
 
@@ -589,7 +594,6 @@ class Invert(object):
 class Resample(object):
     """
     Resample the volume in a sample to a given voxel size
-
       Args:
           voxel_size (float or tuple): Desired output size.
           If float, output volume is isotropic.
@@ -616,8 +620,8 @@ class Resample(object):
         check = self.check
 
         if check is True:
-            image = resample_sitk_image(image, spacing=new_resolution, interpolator='bspline')
-            label = resample_sitk_image(label, spacing=new_resolution, interpolator='bspline')
+            image = resample_sitk_image(image, spacing=new_resolution, interpolator=_interpolator_image)
+            label = resample_sitk_image(label, spacing=new_resolution, interpolator=_interpolator_label)
 
             return {'image': image, 'label': label}
 
@@ -628,7 +632,6 @@ class Resample(object):
 class Padding(object):
     """
     Add padding to the image if size is smaller than patch size
-
       Args:
           output_size (tuple or int): Desired output size. If int, a cubic volume is formed
       """
@@ -669,13 +672,13 @@ class Padding(object):
             resampler.SetSize(output_size)
 
             # resample on image
-            resampler.SetInterpolator(sitk.sitkBSpline)
+            resampler.SetInterpolator(interpolator_image)
             resampler.SetOutputOrigin(image.GetOrigin())
             resampler.SetOutputDirection(image.GetDirection())
             image = resampler.Execute(image)
 
             # resample on label
-            resampler.SetInterpolator(sitk.sitkBSpline)
+            resampler.SetInterpolator(interpolator_label)
             resampler.SetOutputOrigin(label.GetOrigin())
             resampler.SetOutputDirection(label.GetDirection())
 
@@ -684,60 +687,11 @@ class Padding(object):
             return {'image': image, 'label': label}
 
 
-class CropBackground(object):
-    """
-    Crop the background of the images. Center is fixed in the centroid of the skull
-    It crops the images in the xy plane, no cropping is applied to the z direction
-    """
-
-    def __init__(self, output_size):
-        self.name = 'CropBackground'
-
-        assert isinstance(output_size, (int, tuple))
-        if isinstance(output_size, int):
-            self.output_size = (output_size, output_size, output_size)
-        else:
-            assert len(output_size) == 3
-            self.output_size = output_size
-
-        assert all(i > 0 for i in list(self.output_size))
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        size_new = self.output_size
-
-        threshold = sitk.BinaryThresholdImageFilter()
-        threshold.SetLowerThreshold(1)
-        threshold.SetUpperThreshold(255)
-        threshold.SetInsideValue(1)
-        threshold.SetOutsideValue(0)
-
-        roiFilter = sitk.RegionOfInterestImageFilter()
-        roiFilter.SetSize([size_new[0], size_new[1], size_new[2]])
-
-        label_mask = threshold.Execute(label)
-        label_mask = sitk.GetArrayFromImage(label_mask)
-        label_mask = np.transpose(label_mask, (2, 1, 0))
-
-        centroid = scipy.ndimage.measurements.center_of_mass(label_mask)
-
-        x_centroid = np.int(centroid[0])
-        y_centroid = np.int(centroid[1])
-
-        roiFilter.SetIndex([int(x_centroid-(size_new[0])/2), int(y_centroid-(size_new[1])/2), 0])
-
-        label_crop = roiFilter.Execute(label)
-        image_crop = roiFilter.Execute(image)
-
-        return {'image': image_crop, 'label': label_crop}
-
-
 class RandomCrop(object):
     """
     Crop randomly the image in a sample. This is usually used for data augmentation.
       Drop ratio is implemented for randomly dropout crops with empty label. (Default to be 0.2)
       This transformation only applicable in train mode
-
     Args:
       output_size (tuple or int): Desired output size. If int, cubic crop is made.
     """
@@ -797,20 +751,25 @@ class RandomCrop(object):
 
             roiFilter.SetIndex([start_i, start_j, start_k])
 
-            # threshold label into only ones and zero
-            threshold = sitk.BinaryThresholdImageFilter()
-            threshold.SetLowerThreshold(1)
-            threshold.SetUpperThreshold(255)
-            threshold.SetInsideValue(1)
-            threshold.SetOutsideValue(0)
+            if Segmentation is False:
+                # threshold label into only ones and zero
+                threshold = sitk.BinaryThresholdImageFilter()
+                threshold.SetLowerThreshold(1)
+                threshold.SetUpperThreshold(255)
+                threshold.SetInsideValue(1)
+                threshold.SetOutsideValue(0)
 
-            mask = threshold.Execute(label)
-            mask_cropped = roiFilter.Execute(mask)
+                mask = threshold.Execute(label)
+                mask_cropped = roiFilter.Execute(mask)
 
-            label_crop = roiFilter.Execute(label)
-            statFilter = sitk.StatisticsImageFilter()
-            # statFilter.Execute(label_crop)  # original
-            statFilter.Execute(mask_cropped)  # mine
+                label_crop = roiFilter.Execute(label)
+                statFilter = sitk.StatisticsImageFilter()
+                statFilter.Execute(mask_cropped)  # mine
+
+            if Segmentation is True:
+                label_crop = roiFilter.Execute(label)
+                statFilter = sitk.StatisticsImageFilter()
+                statFilter.Execute(label_crop)
 
             # will iterate until a sub volume containing label is extracted
             # pixel_count = seg_crop.GetHeight()*seg_crop.GetWidth()*seg_crop.GetDepth()
@@ -850,15 +809,16 @@ class Augmentation(object):
         # Additive Gaussian noise
         if choice == 1:  # Additive Gaussian noise
 
-            mean = np.random.uniform(0, 1)
-            std = np.random.uniform(0, 2)
+            mean = np.random.uniform(0, 0.5)
+            std = np.random.uniform(0, 0.5)
             self.noiseFilter = sitk.AdditiveGaussianNoiseImageFilter()
             self.noiseFilter.SetMean(mean)
             self.noiseFilter.SetStandardDeviation(std)
 
             image, label = sample['image'], sample['label']
             image = self.noiseFilter.Execute(image)
-            label = self.noiseFilter.Execute(label)
+            if Segmentation is False:
+                label = self.noiseFilter.Execute(label)
 
             return {'image': image, 'label': label}
 
@@ -872,7 +832,8 @@ class Augmentation(object):
 
             image, label = sample['image'], sample['label']
             image = self.noiseFilter.Execute(image)
-            label = self.noiseFilter.Execute(label)
+            if Segmentation is False:
+                label = self.noiseFilter.Execute(label)    # comment for segmentation
 
             return {'image': image, 'label': label}
 
@@ -937,6 +898,8 @@ class Augmentation(object):
             image, label = sample['image'], sample['label']
 
             image = brightness(image)
+            if Segmentation is False:
+                label = brightness(label)
 
             return {'image': image, 'label': label}
 
@@ -946,7 +909,8 @@ class Augmentation(object):
             image, label = sample['image'], sample['label']
 
             image = contrast(image)
-            label = contrast(label)
+            if Segmentation is False:
+                label = contrast(label)             # comment for segmentation
 
             return {'image': image, 'label': label}
 
@@ -1003,7 +967,18 @@ class Augmentation(object):
 
             return {'image': image, 'label': label}
 
+        # histogram adaptequ
+        if choice == 12:
 
+            image, label = sample['image'], sample['label']
+
+            if Segmentation:
+                image = adapt_eq_histogram(image)
+            else:
+                image = adapt_eq_histogram(image)
+                label = adapt_eq_histogram(label)
+
+            return {'image': image, 'label': label}
 
 
 class ConfidenceCrop(object):
@@ -1016,7 +991,6 @@ class ConfidenceCrop(object):
     offset_i = random.choice(s_i)
     where i represents axis direction
     A higher sigma value will provide a higher offset
-
     Args:
       output_size (tuple or int): Desired output size. If int, cubic crop is made.
       sigma (float): Normalized standard deviation value.
@@ -1045,7 +1019,10 @@ class ConfidenceCrop(object):
 
         # guarantee label type to be integer
         castFilter = sitk.CastImageFilter()
-        castFilter.SetOutputPixelType(sitk.sitkUInt8)
+        if Segmentation:
+            castFilter.SetOutputPixelType(sitk.sitkUInt8)
+        else:
+            castFilter.SetOutputPixelType(sitk.sitkFloat32)
         label = castFilter.Execute(label)
 
         ccFilter = sitk.ConnectedComponentImageFilter()
@@ -1101,7 +1078,6 @@ class BSplineDeformation(object):
     Details can be found here:
     https://simpleitk.github.io/SPIE2018_COURSE/spatial_transformations.pdf
     https://itk.org/Doxygen/html/classitk_1_1BSplineTransform.html
-
     Args:
       randomness (int,float): BSpline deformation scaling factor, default is 4.
     """

@@ -1,4 +1,3 @@
-tensorflow
 pillow
 scikit-learn
 simpleITK

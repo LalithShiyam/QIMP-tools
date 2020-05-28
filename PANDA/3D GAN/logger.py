@@ -39,7 +39,7 @@ def plot_generated_batch(image, label, model, resample, resolution, patch_size_x
 
     # --------------------------- Plotting samples during training ---------------------------------
 
-    first_mod, second_mod, predicted = sitk.ReadImage(image), sitk.ReadImage(label), sitk.ReadImage(result)
+    first_mod, second_mod, predicted = sitk.ReadImage(image), sitk.ReadImage(label), result
 
     first_mod = sitk.GetArrayFromImage(first_mod)
     second_mod = sitk.GetArrayFromImage(second_mod)

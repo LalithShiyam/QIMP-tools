@@ -7,3 +7,9 @@ This program converts low-dose CT images (from Siemens mCT) to CT attenuation ma
 # Workflow
 
 ![Workflow](Images/Workflow.png)
+
+
+# Requirements
+
+- SPM12
+- MATLAB R2016a +
