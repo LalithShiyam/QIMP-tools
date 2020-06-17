@@ -5,7 +5,7 @@
 
 
 %% References
-% Gibo H, Lenkey C and Rhoton AL. Microsurgical anat- omy of the supraclinoid portion of the internal carotid artery. J Neurosurg 1981; 55: 560–574.  
+% Gibo H, Lenkey C and Rhoton AL. Microsurgical anat- omy of the supraclinoid portion of the internal carotid artery. J Neurosurg 1981; 55: 560â€“574.  
 
 
 %% Author information
@@ -31,7 +31,7 @@
 % 1. Carotid vascular segmentation
 %    Extracting only the highest pixel values
 %    Defining a Seeding slice where the carotides will surely be
-%    F�nding the SeedPoints
+%    Fínding the SeedPoints
 %    Region Growing around the SeedPoints to obtain the whole arteries
 % 2. Intensity Feature Analysis
 %    Calculating the normalised mean intensity for the found arteries
