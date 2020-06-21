@@ -1,4 +1,4 @@
-![Poodle-logo](images/Poodle-logo.png)
+![Poodle-logo-1](images/Poodle-logo-1.png)
 
 # POODLE: Patch-based Objective carOtid Deep Learning-based sEgmentation
 
