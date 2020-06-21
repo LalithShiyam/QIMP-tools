@@ -1,4 +1,6 @@
-# 3D-Unet: patched based Pytorch implementation for medical images segmentation
+![Poodle-logo](images/Poodle-logo.png)
+
+# POODLE: Patch-based Objective carOtid Deep Learning-based sEgmentation
 
 3D-Unet pipeline is a computational toolbox for segmentation using neural networks. 
 
