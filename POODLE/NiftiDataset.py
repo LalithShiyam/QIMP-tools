@@ -3,67 +3,49 @@ import os
 import re
 import numpy as np
 import random
+import glob
 import scipy.ndimage.interpolation as interpolation
 from sklearn.model_selection import train_test_split
 import scipy
-
+import torch
+import torch.utils.data
 
 
 # ------- Swithes -------
 
-interpolator_image = sitk.sitkBSpline                  # interpolator image
-interpolator_label = sitk.sitkBSpline                  # interpolator label
+interpolator_image = sitk.sitkLinear                 # interpolator image
+interpolator_label = sitk.sitkLinear                  # interpolator label
 
-_interpolator_image = 'bspline'          # interpolator image
-_interpolator_label = 'bspline'          # interpolator label
+_interpolator_image = 'linear'          # interpolator image
+_interpolator_label = 'linear'          # interpolator label
 
-Segmentation = False
+Segmentation = True
 
 # ------------------------------------- Functions ---------------------------------------
-def write_list(name, my_list):
-    with open(name, 'w') as f:
-        for item in my_list:
-            f.write("%s\n" % item)
 
 
-def split_train_set(split_size, images, labels):
+def create_list(data_path):
+    """
+    this function is create the data list and the data is set as follow:
+    --data
+        --data_1
+            image.nii
+            label.nii
+        --data_2
+            image.nii
+            label.nii
+        ...
+    if u use your own data, u can rewrite this function
+    """
+    data_list = glob.glob(os.path.join(data_path, '*'))
 
-    mapIndexPosition = list(zip(images, labels))  # shuffle order list
-    random.shuffle(mapIndexPosition)
-    images, labels = zip(*mapIndexPosition)
+    label_name = 'label.nii'
+    data_name = 'image.nii'
 
-    images, test_images, labels, test_labels = train_test_split(images, labels, test_size=split_size, random_state=42)
+    data_list.sort()
+    list_all = [{'data': os.path.join(path, data_name), 'label': os.path.join(path, label_name)} for path in data_list]
 
-    images = sorted(images, key=numericalSort)
-    labels = sorted(labels, key=numericalSort)
-
-    test_images = sorted(test_images, key=numericalSort)
-    test_labels = sorted(test_labels, key=numericalSort)
-
-    return images, test_images, labels, test_labels
-
-
-def numericalSort(value):
-    numbers = re.compile(r'(\d+)')
-    parts = numbers.split(value)
-    parts[1::2] = map(int, parts[1::2])
-    return parts
-
-
-def lstFiles(Path):
-
-    images_list = []  # create an empty list, the raw image data files is stored here
-    for dirName, subdirList, fileList in os.walk(Path):
-        for filename in fileList:
-            if ".nii.gz" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-            elif ".nii" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-            elif ".nrrd" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-
-    images_list = sorted(images_list, key=numericalSort)
-    return images_list
+    return list_all
 
 
 def resize(img, new_size, interpolator):
@@ -335,7 +317,7 @@ def contrast(image):
     IOD = np.sum(array)
     luminanza = int(IOD / ntotpixel)
 
-    c = np.random.randint(-10, 10)
+    c = np.random.randint(-20, 20)
 
     d = array - luminanza
     dc = d * abs(c) / 100
@@ -375,59 +357,54 @@ def translateit(image, offset, isseg=False):
     return img
 
 
-def adapt_eq_histogram(image):
+def imadjust(image,gamma=np.random.uniform(1, 2)):
 
-    adapt = sitk.AdaptiveHistogramEqualizationImageFilter()
-    adapt.SetAlpha(0.9)
-    adapt.SetBeta(0.6)
-    image = adapt.Execute(image)  # set mean and std deviation
+    array = np.transpose(sitk.GetArrayFromImage(image), axes=(2, 1, 0))
+    spacing = image.GetSpacing()
+    direction = image.GetDirection()
+    origin = image.GetOrigin()
 
-    normalizeFilter = sitk.NormalizeImageFilter()
-    resacleFilter = sitk.RescaleIntensityImageFilter()
-    resacleFilter.SetOutputMaximum(255)
-    resacleFilter.SetOutputMinimum(0)
-    image = normalizeFilter.Execute(image)  # set mean and std deviation
-    image = resacleFilter.Execute(image)  # set intensity 0-255
+    array = (((array - array.min()) / (array.max() - array.min())) ** gamma) * (255 - 0) + 0
 
-    return image
+    img = sitk.GetImageFromArray(np.transpose(array, axes=(2, 1, 0)))
+    img.SetDirection(direction)
+    img.SetOrigin(origin)
+    img.SetSpacing(spacing)
+
+    return img
 
 # --------------------------------------------------------------------------------------
 
-class NiftiDataset(object):
-    """
-    load image-label pair for training, testing and inference.
-    Currently only support linear interpolation method
-    Args:
-      image_filename (string): Filename of image data.
-      label_filename (string): Filename of label data.
-      transforms (list): List of SimpleITK image transformations.
-      train (bool): Determine whether the dataset class run in training/inference mode. When set to false, an empty label with same metadata as image is generated.
-    """
 
-    def __init__(self,
-                 image_filename='img.nii',
-                 label_filename='label.nii',
+class NifitDataSet(torch.utils.data.Dataset):
+
+    def __init__(self, data_list,
                  transforms=None,
                  train=False,
-                 test=False):
+                 test=False,):
 
         # Init membership variables
-        self.image_filename = image_filename
-        self.label_filename = label_filename
+        self.data_list = data_list
         self.transforms = transforms
         self.train = train
         self.test = test
         self.bit = sitk.sitkFloat32
 
-    def get_dataset(self):
-
-        image_paths = self.image_filename
-        label_paths = self.label_filename
-
-        image_paths = image_paths.rstrip()
-        label_paths = label_paths.rstrip()
-
-        return self.input_parser(image_paths, label_paths)
+        """
+        the dataset class receive a list that contain the data item, and each item
+        is a dict with two item include data path and label path. as follow:
+        data_list = [
+        {
+        "data":　data_path_1,
+        "label": label_path_1,
+        },
+        {
+        "data": data_path_2,
+        "label": label_path_2,
+        }
+        ...
+        ]
+        """
 
     def read_image(self, path):
         reader = sitk.ImageFileReader()
@@ -435,9 +412,14 @@ class NiftiDataset(object):
         image = reader.Execute()
         return image
 
-    def input_parser(self, image_path, label_path):  # read image and label
+    def __getitem__(self, item):
+
+        data_dict = self.data_list[item]
+        data_path = data_dict["data"]
+        label_path = data_dict["label"]
+
         # read image and label
-        image = self.read_image(image_path)
+        image = self.read_image(data_path)
 
         image = Normalization(image)  # set intensity 0-255
 
@@ -461,9 +443,7 @@ class NiftiDataset(object):
             label = castImageFilter.Execute(label)
 
         else:
-            label = sitk.Image(image.GetSize(), self.bit)  # if it´s not train, create a new image with same size and spacing
-            if Segmentation is False:
-                label = Normalization(label)  # set intensity 0-255
+            label = sitk.Image(image.GetSize(), self.bit)
             label.SetOrigin(image.GetOrigin())
             label.SetSpacing(image.GetSpacing())
 
@@ -473,20 +453,24 @@ class NiftiDataset(object):
             for transform in self.transforms:
                 sample = transform(sample)
 
+        # convert sample to tf tensors
         image_np = sitk.GetArrayFromImage(sample['image'])
         label_np = sitk.GetArrayFromImage(sample['label'])
 
         if Segmentation is True:
-            label_np = np.around(label_np)
+            label_np = abs(np.around(label_np))
 
         # to unify matrix dimension order between SimpleITK([x,y,z]) and numpy([z,y,x])  (actually it´s the contrary)
         image_np = np.transpose(image_np, (2, 1, 0))
         label_np = np.transpose(label_np, (2, 1, 0))
 
-        image_np = image_np[np.newaxis, :, :, :, np.newaxis]
-        label_np = label_np[np.newaxis, :, :, :, np.newaxis]
+        image_np = image_np[np.newaxis, :, :, :]
+        label_np = label_np[np.newaxis, :, :, :]
 
-        return image_np, label_np  # this is the final output to feed the network
+        return torch.from_numpy(image_np), torch.from_numpy(label_np)  # this is the final output to feed the network
+
+    def __len__(self):
+        return len(self.data_list)
 
 
 def Normalization(image):
@@ -497,10 +481,40 @@ def Normalization(image):
     resacleFilter = sitk.RescaleIntensityImageFilter()
     resacleFilter.SetOutputMaximum(255)
     resacleFilter.SetOutputMinimum(0)
+
     image = normalizeFilter.Execute(image)  # set mean and std deviation
     image = resacleFilter.Execute(image)  # set intensity 0-255
 
     return image
+
+
+def Normalization_CT(image, x):
+    """
+    Normalize an image to 0 - 255 (8bits)
+    """
+
+    ct_array = sitk.GetArrayFromImage(image)
+
+    upper = 200 + x
+    lower = -200 + x
+
+    ct_array[ct_array > upper] = upper
+    ct_array[ct_array < lower] = lower
+
+    new_ct = sitk.GetImageFromArray(ct_array)
+    new_ct.SetDirection(image.GetDirection())
+    new_ct.SetOrigin(image.GetOrigin())
+    new_ct.SetSpacing(image.GetSpacing())
+
+    normalizeFilter = sitk.NormalizeImageFilter()
+    resacleFilter = sitk.RescaleIntensityImageFilter()
+    resacleFilter.SetOutputMaximum(255)
+    resacleFilter.SetOutputMinimum(0)
+
+    new_ct = normalizeFilter.Execute(new_ct)  # set mean and std deviation
+    new_ct = resacleFilter.Execute(new_ct)  # set intensity 0-255
+
+    return new_ct
 
 
 class StatisticalNormalization(object):
@@ -521,8 +535,10 @@ class StatisticalNormalization(object):
         intensityWindowingFilter = sitk.IntensityWindowingImageFilter()
         intensityWindowingFilter.SetOutputMaximum(255)
         intensityWindowingFilter.SetOutputMinimum(0)
-        intensityWindowingFilter.SetWindowMaximum(statisticsFilter.GetMean() + self.sigma * statisticsFilter.GetSigma());
-        intensityWindowingFilter.SetWindowMinimum(statisticsFilter.GetMean() - self.sigma * statisticsFilter.GetSigma());
+        intensityWindowingFilter.SetWindowMaximum(
+            statisticsFilter.GetMean() + self.sigma * statisticsFilter.GetSigma());
+        intensityWindowingFilter.SetWindowMinimum(
+            statisticsFilter.GetMean() - self.sigma * statisticsFilter.GetSigma());
 
         image = intensityWindowingFilter.Execute(image)
 
@@ -550,6 +566,29 @@ class ManualNormalization(object):
         intensityWindowingFilter.SetWindowMinimum(self.windowMin);
 
         image = intensityWindowingFilter.Execute(image)
+
+        return {'image': image, 'label': label}
+
+
+class LaplacianRecursive(object):
+    """
+    Laplacian recursive image filter
+    """
+
+    def __init__(self, sigma):
+        self.name = 'Laplacianrecursiveimagefilter'
+        assert isinstance(sigma, (int, float))
+        self.sigma = sigma
+
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        filter = sitk.LaplacianRecursiveGaussianImageFilter()
+
+        filter.SetSigma(1.5)
+
+        image = filter.Execute(image)
+        # label = filter.Execute(label)  # comment because is segmentation
 
         return {'image': image, 'label': label}
 
@@ -594,6 +633,7 @@ class Invert(object):
 class Resample(object):
     """
     Resample the volume in a sample to a given voxel size
+
       Args:
           voxel_size (float or tuple): Desired output size.
           If float, output volume is isotropic.
@@ -632,6 +672,7 @@ class Resample(object):
 class Padding(object):
     """
     Add padding to the image if size is smaller than patch size
+
       Args:
           output_size (tuple or int): Desired output size. If int, a cubic volume is formed
       """
@@ -672,13 +713,13 @@ class Padding(object):
             resampler.SetSize(output_size)
 
             # resample on image
-            resampler.SetInterpolator(interpolator_image)
+            resampler.SetInterpolator(sitk.sitkBSpline)
             resampler.SetOutputOrigin(image.GetOrigin())
             resampler.SetOutputDirection(image.GetDirection())
             image = resampler.Execute(image)
 
             # resample on label
-            resampler.SetInterpolator(interpolator_label)
+            resampler.SetInterpolator(sitk.sitkBSpline)
             resampler.SetOutputOrigin(label.GetOrigin())
             resampler.SetOutputDirection(label.GetDirection())
 
@@ -687,11 +728,86 @@ class Padding(object):
             return {'image': image, 'label': label}
 
 
+class Adapt_eq_histogram(object):
+    """
+    (Beta) Function to orient image in specific axes order
+    The elements of the order array must be an permutation of the numbers from 0 to 2.
+    """
+
+    def __init__(self):
+        self.name = 'Adapt_eq_histogram'
+
+    def __call__(self, sample):
+
+        adapt = sitk.AdaptiveHistogramEqualizationImageFilter()
+        adapt.SetAlpha(0.7)
+        adapt.SetBeta(0.8)
+        image = adapt.Execute(sample['image'])  # set mean and std deviation
+
+        resacleFilter = sitk.RescaleIntensityImageFilter()
+        resacleFilter.SetOutputMaximum(255)
+        resacleFilter.SetOutputMinimum(0)
+        image = resacleFilter.Execute(image)  # set mean and std deviation
+
+        label = sample['label']
+
+        return {'image': image, 'label': label}
+
+
+class CropBackground(object):
+    """
+    Crop the background of the images. Center is fixed in the centroid of the skull
+    It crops the images in the xy plane, no cropping is applied to the z direction
+    """
+
+    def __init__(self, output_size):
+        self.name = 'CropBackground'
+
+        assert isinstance(output_size, (int, tuple))
+        if isinstance(output_size, int):
+            self.output_size = (output_size, output_size, output_size)
+        else:
+            assert len(output_size) == 3
+            self.output_size = output_size
+
+        assert all(i > 0 for i in list(self.output_size))
+
+    def __call__(self, sample):
+        image, label = sample['image'], sample['label']
+        size_new = self.output_size
+
+        threshold = sitk.BinaryThresholdImageFilter()
+        threshold.SetLowerThreshold(1)
+        threshold.SetUpperThreshold(255)
+        threshold.SetInsideValue(1)
+        threshold.SetOutsideValue(0)
+
+        roiFilter = sitk.RegionOfInterestImageFilter()
+        roiFilter.SetSize([size_new[0], size_new[1], size_new[2]])
+
+        label_mask = threshold.Execute(label)
+        label_mask = sitk.GetArrayFromImage(label_mask)
+        label_mask = np.transpose(label_mask, (2, 1, 0))
+
+        centroid = scipy.ndimage.measurements.center_of_mass(label_mask)
+
+        x_centroid = np.int(centroid[0])
+        y_centroid = np.int(centroid[1])
+
+        roiFilter.SetIndex([int(x_centroid-(size_new[0])/2), int(y_centroid-(size_new[1])/2), 0])
+
+        label_crop = roiFilter.Execute(label)
+        image_crop = roiFilter.Execute(image)
+
+        return {'image': image_crop, 'label': label_crop}
+
+
 class RandomCrop(object):
     """
     Crop randomly the image in a sample. This is usually used for data augmentation.
       Drop ratio is implemented for randomly dropout crops with empty label. (Default to be 0.2)
       This transformation only applicable in train mode
+
     Args:
       output_size (tuple or int): Desired output size. If int, cubic crop is made.
     """
@@ -758,13 +874,9 @@ class RandomCrop(object):
                 threshold.SetUpperThreshold(255)
                 threshold.SetInsideValue(1)
                 threshold.SetOutsideValue(0)
-
                 mask = threshold.Execute(label)
                 mask_cropped = roiFilter.Execute(mask)
-
-                label_crop = roiFilter.Execute(label)
-                statFilter = sitk.StatisticsImageFilter()
-                statFilter.Execute(mask_cropped)  # mine
+                statFilter.Execute(mask_cropped)  # mine for GANs
 
             if Segmentation is True:
                 label_crop = roiFilter.Execute(label)
@@ -798,7 +910,7 @@ class Augmentation(object):
 
     def __call__(self, sample):
 
-        choice = np.random.choice([0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11])
+        choice = np.random.choice([0, 1, 2, 4, 5, 6, 7, 8, 9, 12])
 
         # no augmentation
         if choice == 0:  # no augmentation
@@ -809,8 +921,8 @@ class Augmentation(object):
         # Additive Gaussian noise
         if choice == 1:  # Additive Gaussian noise
 
-            mean = np.random.uniform(0, 0.5)
-            std = np.random.uniform(0, 0.5)
+            mean = np.random.uniform(0, 1)
+            std = np.random.uniform(0, 2)
             self.noiseFilter = sitk.AdditiveGaussianNoiseImageFilter()
             self.noiseFilter.SetMean(mean)
             self.noiseFilter.SetStandardDeviation(std)
@@ -967,16 +1079,11 @@ class Augmentation(object):
 
             return {'image': image, 'label': label}
 
-        # histogram adaptequ
+        # histogram gamma
         if choice == 12:
-
             image, label = sample['image'], sample['label']
 
-            if Segmentation:
-                image = adapt_eq_histogram(image)
-            else:
-                image = adapt_eq_histogram(image)
-                label = adapt_eq_histogram(label)
+            image = imadjust(image)
 
             return {'image': image, 'label': label}
 
@@ -991,6 +1098,7 @@ class ConfidenceCrop(object):
     offset_i = random.choice(s_i)
     where i represents axis direction
     A higher sigma value will provide a higher offset
+
     Args:
       output_size (tuple or int): Desired output size. If int, cubic crop is made.
       sigma (float): Normalized standard deviation value.
@@ -1019,10 +1127,7 @@ class ConfidenceCrop(object):
 
         # guarantee label type to be integer
         castFilter = sitk.CastImageFilter()
-        if Segmentation:
-            castFilter.SetOutputPixelType(sitk.sitkUInt8)
-        else:
-            castFilter.SetOutputPixelType(sitk.sitkFloat32)
+        castFilter.SetOutputPixelType(sitk.sitkUInt8)
         label = castFilter.Execute(label)
 
         ccFilter = sitk.ConnectedComponentImageFilter()
@@ -1078,6 +1183,7 @@ class BSplineDeformation(object):
     Details can be found here:
     https://simpleitk.github.io/SPIE2018_COURSE/spatial_transformations.pdf
     https://itk.org/Doxygen/html/classitk_1_1BSplineTransform.html
+
     Args:
       randomness (int,float): BSpline deformation scaling factor, default is 4.
     """
