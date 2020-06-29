@@ -11,7 +11,8 @@ import math
 import scipy
 
 ''' The script run the inference on the single early frame image by the user. Normalization is performed and images are scaled to interval values: 0-255.
-    The path of the input image and the path to save the result must be specified in the command line '''
+    The path of the input image and the path to save the result must be specified in the command line. To have fewer patches to inference for one image,
+    please increase the stride_inplane and stride_layer values. The values must be less than the image size to avoid errors. '''
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use the GPU')

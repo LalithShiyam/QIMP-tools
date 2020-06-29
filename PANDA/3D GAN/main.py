@@ -20,8 +20,7 @@ import argparse
 
 Author information
 David Iommi, M.Sc.
-Quantitative Imaging and Medical Physics, Medical University of Vienna
-Date: 20.1.2020, Wien
+Quantitative Imaging and Medical Physics, Medical University of Vienna, Wien
 
 The network was realized to generate PET late-frames from PET low-frames.
 
@@ -32,8 +31,8 @@ line the parameter's values you're interested to change.
 The script runs the training of a 3D GAN based on pix2pix. (Ian J. Goodfellow, Jean Pouget-Abadie, Mehdi Mirza, Bing Xu, David Warde-Farley, Sherjil Ozair, Aaron Courville, and Yoshua Bengio.
 Generative Adversarial Networks. NIPS, 2014)
 
-The generator can take as input the entire volume or patches of the volume. The patches will reconstruct the original volume after the inference is run. 
-The discriminator can take as input the output of the generator or its sub-patches. The user has to choose this option.  
+The generator takes as input patches of the volume. The patches will reconstruct the original volume after the inference is run. 
+The discriminator can take as input the output of the generator or its sub-patches. The user has to choose these options.  
 
 '''
 
@@ -50,9 +49,9 @@ if __name__ == "__main__":
     parser.add_argument("--Do_you_wanna_train", action='store_true', default=False, help='Training will start')
     parser.add_argument("--Do_you_wanna_load_weights", action='store_true', default=False, help='PreLoad existing weights for the training')
     parser.add_argument("--Do_you_wanna_check_accuracy", action='store_true', default=True, help='Model will be tested after the training')
-    parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with low dose and high dose folders')
-    parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii low dose images')
-    parser.add_argument("--labels_folder", type=str, default='./Data_folder/labels', help='path to the .nii high dose images')
+    parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to folders with early frame and late frame images folders')
+    parser.add_argument("--images_folder", type=str, default='./Data_folder/volumes', help='path to the .nii early frame images')
+    parser.add_argument("--labels_folder", type=str, default='./Data_folder/labels', help='path to the .nii late frame images')
     parser.add_argument("--val_split", type=float, default=0.1, help='Split value for the validation data (0 to 1 float number)')
     parser.add_argument("--history_dir", type=str, default='./History', help='path where to save sample images during training')
     parser.add_argument("--weights", type=str, default='./History/weights', help='path to save the weights of the model')
@@ -61,11 +60,11 @@ if __name__ == "__main__":
 
     # Training parameters
     parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
-    parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
+    parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution to resample the images')
     parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
     parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
     parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
-    parser.add_argument("--mini_patch", action='store_true', default=True, help=' If True, discriminator and DCgan will be trained with subpatches of the generator input')
+    parser.add_argument("--mini_patch", action='store_true', default=True, help=' If True, discriminator and DCgan will be trained with sub-patches of the generator input')
     parser.add_argument("--mini_patch_size", type=int, nargs=3, default=[64, 64, 64], help="Input dimension for the discriminator and DCgan")
     parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
     parser.add_argument("--drop_ratio", type=float, nargs=1, default=0, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
