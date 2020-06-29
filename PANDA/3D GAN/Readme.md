@@ -8,12 +8,6 @@ PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET 
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
 
-# Important note: DO IT FIRST!
-
-For the conditional GANs to work, the frames should have a minimal amount of activity distribution to start with. This can be evaluated with the aid of the function below. 
-
-  - shannon_entropy_fingerprinting.ipynb : calculates the a shannon-entropy fingerprint for each image volume, and compares it to the shannon entropy of a reference volume, in our case the image of the late pet frame. Finally, the script calculates the absolute difference in shannon entropy of the compared image vs the reference image. If the absolute difference is less than 1, then this frame could be successfully used for GAN training.
-
 # Examples
 
 Sample images (axial and coronal views): on the left side are the early PET frames, in the middle the output of the 3D GAN and on the right side the corresponding late PET frame
