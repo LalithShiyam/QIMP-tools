@@ -1,10 +1,11 @@
 pillow
 scikit-learn
 simpleITK
-keras
+keras==2.2.4
 scikit-image
 pandas
 pydicom
 nibabel
 tqdm
 git+https://www.github.com/farizrahman4u/keras-contrib.git
+tensorflow==1.13.1
