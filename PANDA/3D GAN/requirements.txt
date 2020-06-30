@@ -8,4 +8,3 @@ pydicom
 nibabel
 tqdm
 git+https://www.github.com/farizrahman4u/keras-contrib.git
-tensorflow==1.13.1
