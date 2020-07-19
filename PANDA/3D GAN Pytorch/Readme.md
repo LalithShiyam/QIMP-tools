@@ -3,7 +3,7 @@
 # PANDA: PET nAvigators usiNg Deep leArning
 
 PANDA (Pytorch) pipeline, is a computational toolbox (MATLAB + pytorch) for generating PET navigators using Generative Adversarial networks. 
-This is the Torch version of the first repository of PANDA (https://github.com/LalithShiyam/QIMP-tools/tree/master/PANDA/3D%20GAN) that was developed in Keras
+This is the Torch version of the first repository of PANDA (https://github.com/LalithShiyam/QIMP-tools/tree/master/PANDA/3D%20GAN) that was developed in Keras.
 
 # Workflow
 
@@ -33,6 +33,8 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 # Python scripts and their function
 
 - organize_folder_structure.py: Organize the data in the folder structure for the network
+
+- init.py: List of options used to train the network. 
 
 - NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN (reads .nii files). NiftiDataset.py
   skeleton taken from https://github.com/jackyko1991/unet3d-pytorch
@@ -81,35 +83,36 @@ Resulting folder Structure:
 	|   |   |   └── label.nii            
 
 
-3) Launch the pipeline for training and testing dataset (example): 
+3) Launch the pipeline for training: 
 ```console
-python3 main.py --Create_training_test_dataset=True --Do_you_wanna_train=True  --Do_you_wanna_check_accuracy=True --patch_size=(128,128,64)
+python train.py 
 ```
-Sample of the logger, which helps to monitor the training process
-![logger](Images/epoch_80.png)
+There are several parameters you can set for the training; depending on your dataset characteristics you can modify the default ones by opening the init.py file. 
+The description for each parameter included is in the init.py source file.
 
-There are several parameters you can set for the training; you can modify the default ones in the source code or type them from the pipeline. The description for each parameter included is in the main.py source file.
-Please open it to read the descriptions if you want to train on your own data.
+Sample of the logger, which helps to monitor the training process
+![logger](Images/epoch_162.png)
+
 
 ## Inference:
 
 Launch the inference on only one image (example):
 
 ```console
-python3 predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
+python predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
 ```
 ### Sample script inference
 ```console
-C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\weights.h5
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\g_epoch_200.pth
 ```
 
 ## Citations
 
-To implement PANDA we were inspired by existing codes from other github contributors. Here is the list of github repositories:
+To implement PANDA Pytorch we were inspired by existing codes from other github contributors. Here is the list of github repositories:
 
-- https://github.com/jackyko1991/vnet-tensorflow
+- https://github.com/mrzhu-cool/pix2pix-pytorch
 
-- https://github.com/joellliu/3D-GAN-for-MRI
+- https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
 
 
 
