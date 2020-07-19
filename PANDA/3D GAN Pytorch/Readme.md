@@ -31,17 +31,15 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 # Python scripts and their function
 
-- data_generator.py / NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
+- NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
 
 - check_loader_patches: Shows paired early and late frames patches fed to the 3DGANGan during the training  
 
-- generator.py / discriminator.py / DCGAN.py: the architecture of the 3DGAN.
+- generators.py / discriminators.py : the architectures of the 3DGAN.
 
 - main.py: Runs the training and the inference on the training and validation dataset.
 
 - logger.py: Generates sample images to monitor the training.
-
-- predict.py: It launches the inference on training and validation data.
 
 - predict_single_image.py: It launches the inference on a single input image chosen by the user.
 
