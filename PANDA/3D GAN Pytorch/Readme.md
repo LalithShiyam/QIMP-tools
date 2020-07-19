@@ -2,7 +2,8 @@
 
 # PANDA: PET nAvigators usiNg Deep leArning
 
-PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks. 
+PANDA (Pytorch) pipeline, is a computational toolbox (MATLAB + pytorch) for generating PET navigators using Generative Adversarial networks. This is the Torch version of the first repository of PANDA (https://github.com/LalithShiyam/QIMP-tools/tree/master/PANDA/3D%20GAN)
+that was developed in Keras
 
 # Workflow
 
@@ -20,7 +21,7 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - MATLAB R2016a or higher
 - SPM 12
-- Python 3
+- Pytorch
 
 # MATLAB scripts and their function 
 
