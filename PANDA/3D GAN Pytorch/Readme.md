@@ -49,6 +49,13 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - predict_single_image.py: It launches the inference on a single input image chosen by the user.
 
+*******************************************************************************
+### Pre-trained-model
+The weights are available and you can download them from the following links:
+- generator: https://drive.google.com/file/d/1_pj3wdPF1F5GwaKVGbBQbpFNTko_IA5L/view?usp=sharing
+- discriminator: https://drive.google.com/file/d/1Oi3J8N8xtqMgSA3FSXnqpHFFKLNUM-U7/view?usp=sharing
+*******************************************************************************
+
 # Tutorial for 3DGAN
 
 ## Training:
