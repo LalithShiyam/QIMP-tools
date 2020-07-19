@@ -62,6 +62,7 @@ python organize_folder_structure.py --images ./volumes --labels ./labels --split
 Be sure that early and late frames were correctly paired in the two original "./volumes" and "./labels" folders. The value "split" is the number of samples saved as testing dataset
 
 Resulting folder Structure:
+
 	.
 	├── Data_folder                   
 	|   ├── train              
@@ -77,7 +78,7 @@ Resulting folder Structure:
 	|   |   |   └── label.nii              
 	|   |   └── patient_4             
 	|   |   |   ├── image.nii              
-	|   |   |   └── label.nii    
+	|   |   |   └── label.nii            
 
 
 3) Launch the pipeline for training and testing dataset (example): 
