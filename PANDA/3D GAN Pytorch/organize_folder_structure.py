@@ -48,10 +48,10 @@ if __name__ == "__main__":
     if not os.path.isdir('./Data_folder/test'):
         os.mkdir('./Data_folder/test')
 
-    for i in range(len(list_images)-args.split):
+    for i in range(len(list_images)-int(args.split)):
 
-        a = list_images[args.split+i]
-        b = list_labels[args.split+i]
+        a = list_images[int(args.split)+i]
+        b = list_labels[int(args.split)+i]
 
         print(a)
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         sitk.WriteImage(label, label_directory)
 
 
-    for i in range(args.split):
+    for i in range(int(args.split)):
 
         a = list_images[i]
         b = list_labels[i]

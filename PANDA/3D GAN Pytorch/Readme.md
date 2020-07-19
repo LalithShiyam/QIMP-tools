@@ -5,8 +5,6 @@
 PANDA (Pytorch) pipeline, is a computational toolbox (MATLAB + pytorch) for generating PET navigators using Generative Adversarial networks. 
 This is the Torch version of the first repository of PANDA (https://github.com/LalithShiyam/QIMP-tools/tree/master/PANDA/3D%20GAN) that was developed in Keras
 
-(UPDATING IN PROGRESS)
-
 # Workflow
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
@@ -24,6 +22,7 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 - MATLAB R2016a or higher
 - SPM 12
 - Pytorch
+- See requirements.txt list (execute "pip install -r requirements.txt" to install the python dependencies)
 
 # MATLAB scripts and their function 
 
@@ -33,13 +32,16 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 # Python scripts and their function
 
-- NiftiDataset.py : They normalize, augment the data, extract the patches and feed them to the 3DGAN. 
+- organize_folder_structure.py: Organize the data in the folder structure for the network
+
+- NiftiDataset.py : They augment the data, extract the patches and feed them to the GAN (reads .nii files). NiftiDataset.py
+  skeleton taken from https://github.com/jackyko1991/unet3d-pytorch
 
 - check_loader_patches: Shows paired early and late frames patches fed to the 3DGANGan during the training  
 
 - generators.py / discriminators.py : the architectures of the 3DGAN.
 
-- main.py: Runs the training and the inference on the training and validation dataset.
+- train.py: Runs the training the training dataset.
 
 - logger.py: Generates sample images to monitor the training.
 
@@ -51,7 +53,32 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom files in Nifti format.
 
-2) Place early-frames in "./3D GAN/Data_folder/volumes" folder and late-frames in "./3D GAN/Data_folder/labels" folder. Be sure that early/late frames are correctly paired in the two folders.
+2) Launch organize_folder_structure.py to organize the data for the training. If early-frames  are in in "./volumes" folder and late-frames in "./labels" folder run: 
+
+```console
+python organize_folder_structure.py --images ./volumes --labels ./labels --split 2
+```
+
+Be sure that early and late frames were correctly paired in the two original "./volumes" and "./labels" folders. The value "split" is the number of samples saved as testing dataset
+
+Resulting folder Structure:
+	.
+	├── Data_folder                   
+	|   ├── train              
+	|   |   ├── patient_1             # Training
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii                     
+	|   |   └── patient_2             
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii              
+	|   ├── test               
+	|   |   ├── patient_3             # Testing
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii              
+	|   |   └── patient_4             
+	|   |   |   ├── image.nii              
+	|   |   |   └── label.nii    
+
 
 3) Launch the pipeline for training and testing dataset (example): 
 ```console
