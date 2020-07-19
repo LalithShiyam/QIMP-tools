@@ -53,20 +53,30 @@ where2Store=[where2Store,filesep,convertedFolder];
 
 % Find out the format of the medical images: Dicom, nifti or analyze.
 
-medFormat=checkFileFormat(path2MedImg);
+
 cd(path2MedImg)
-switch medFormat
-    case 'Analyze'
-        medFiles=dir('*hdr')
-        for lp=1:length(medFiles)
-            medImg{lp}=analyze75read(medFiles(lp).name);
-        end
-    case 'Nifti'
-        medFiles=dir('*nii')
-        for lp=1:length(medFiles)
-            medImg{lp}=niftiread(medFiles(lp).name);
-        end
+
+medFiles=dir('*nii')
+for lp=1:length(medFiles)
+    medImg{lp}=niftiread(medFiles(lp).name);
 end
+
+
+% medFormat=checkFileFormat(path2MedImg);
+% cd(path2MedImg)
+% switch medFormat
+%     case 'Analyze'
+%         medFiles=dir('*hdr')
+%         for lp=1:length(medFiles)
+%             medImg{lp}=analyze75read(medFiles(lp).name);
+%         end
+%     case 'Nifti'
+%         medFiles=dir('*nii')
+%         for lp=1:length(medFiles)
+%             medImg{lp}=niftiread(medFiles(lp).name);
+%         end
+% end
+
 
 % converting the medical image (nifti or analyze) to jpg/png.
 
