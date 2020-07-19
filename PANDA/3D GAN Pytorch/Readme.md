@@ -1,4 +1,4 @@
-![Panda-logo](Images/Panda-logo.png)
+![Panda-logo](Images/Panda-logo.JPG)
 
 # PANDA: PET nAvigators usiNg Deep leArning
 
