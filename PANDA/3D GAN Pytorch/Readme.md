@@ -30,6 +30,8 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 - convertDicomtoNii.m: Converts the Dicom series in a folder to nifti files, using SPM.
 
+- cropNiftiForGan.m: Crop the image to remove the voxels of the background
+
 # Python scripts and their function
 
 - organize_folder_structure.py: Organize the data in the folder structure for the network
@@ -62,7 +64,10 @@ The weights are available and you can download them from the following links:
 
 1) Launch the matlab file "convertDicomtoNii.m" to convert Dicom files in Nifti format.
 
-2) Launch organize_folder_structure.py to organize the data for the training. If early-frames  are in in "./volumes" folder and late-frames in "./labels" folder run: 
+2) (Optional) Launch cropNiftiForGan.m to crop the image and remove the noise of the background region around the skull. This script was tested for Siemens Biograph mMR,
+cropping the 344x344x127 original frame into 128x128x128 frame. Please change the code depending of your needs.  
+
+3) Launch organize_folder_structure.py to organize the data for the training. If early-frames  are in in "./volumes" folder and late-frames in "./labels" folder run: 
 
 ```console
 python organize_folder_structure.py --images ./volumes --labels ./labels --split 2
@@ -90,7 +95,7 @@ Resulting folder Structure:
 	|   |   |   └── label.nii            
 
 
-3) Launch the pipeline for training: 
+4) Launch the pipeline for training: 
 ```console
 python train.py 
 ```
