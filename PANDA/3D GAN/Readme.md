@@ -4,6 +4,9 @@
 
 PANDA pipeline, is a computational toolbox (MATLAB + python) for generating PET navigators using Generative Adversarial networks. 
 
+This repository contains the Keras version of PANDA. The last Pytorch implementation can be found at the following link:
+https://github.com/LalithShiyam/QIMP-tools/tree/master/PANDA/3D%20GAN%20Pytorch
+
 # Workflow
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
