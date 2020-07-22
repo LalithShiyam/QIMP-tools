@@ -66,98 +66,127 @@ def init_weights(net, init_type='normal', init_gain=0.02):
 
 # -----  ResnetGenerator -----------
 
-class ResnetBlock(nn.Module):
-    def __init__(self, inf, onf):
-        """
+class ResnetGenerator(nn.Module):
+    """Resnet-based generator that consists of Resnet blocks between a few downsampling/upsampling operations.
+    We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
+    """
+
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm3d, use_dropout=False, n_blocks=9, padding_type='replicate'):
+        """Construct a Resnet-based generator
         Parameters:
-            inf: input number of filters
-            onf: output number of filters
+            input_nc (int)      -- the number of channels in input images
+            output_nc (int)     -- the number of channels in output images
+            ngf (int)           -- the number of filters in the last conv layer
+            norm_layer          -- normalization layer
+            use_dropout (bool)  -- if use dropout layers
+            n_blocks (int)      -- the number of ResNet blocks
+            padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
+        """
+        assert(n_blocks >= 0)
+        super(ResnetGenerator, self).__init__()
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm3d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm3d
+
+        # model = [nn.ReflectionPad2d(3),
+        #          nn.Conv3d(input_nc, ngf, kernel_size=7, padding=0, bias=use_bias),
+        #          norm_layer(ngf),
+        #          nn.ReLU(True)]
+
+        model = [nn.ReplicationPad3d(3),
+                 nn.Conv3d(input_nc, ngf, kernel_size=7, padding=0, bias=use_bias),
+                 norm_layer(ngf),
+                 nn.ReLU(True)]
+
+        n_downsampling = 2
+        for i in range(n_downsampling):  # add downsampling layers
+            mult = 2 ** i
+            model += [nn.Conv3d(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1, bias=use_bias),
+                      norm_layer(ngf * mult * 2),
+                      nn.ReLU(True)]
+
+        mult = 2 ** n_downsampling
+        for i in range(n_blocks):       # add ResNet blocks
+
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, use_bias=use_bias)]
+
+        for i in range(n_downsampling):  # add upsampling layers
+            mult = 2 ** (n_downsampling - i)
+            model += [nn.ConvTranspose3d(ngf * mult, int(ngf * mult / 2),
+                                         kernel_size=3, stride=2,
+                                         padding=1, output_padding=1,
+                                         bias=use_bias),
+                      norm_layer(int(ngf * mult / 2)),
+                      nn.ReLU(True)]
+        # model += [nn.ReflectionPad2d(3)]
+        model += [nn.ReplicationPad3d(3)]
+        model += [nn.Conv3d(ngf, output_nc, kernel_size=7, padding=0)]
+        # model += [nn.Tanh()]
+        model += [nn.ReLU()]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        """Standard forward"""
+        return self.model(input)
+
+
+class ResnetBlock(nn.Module):
+    """Define a Resnet block"""
+
+    def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+        """Initialize the Resnet block
+        A resnet block is a conv block with skip connections
+        We construct a conv block with build_conv_block function,
+        and implement skip connections in <forward> function.
+        Original Resnet paper: https://arxiv.org/pdf/1512.03385.pdf
         """
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(inf, onf)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, use_bias)
 
-    def build_conv_block(self, inf, onf):
-        conv_block = [nn.Conv3d(inf, onf, kernel_size=3, stride=1, padding=1), nn.BatchNorm3d(onf), lrelu]
-        conv_block += [nn.Conv3d(inf, onf, kernel_size=3, stride=1, padding=1), nn.BatchNorm3d(onf)]
+    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+        """Construct a convolutional block.
+        Parameters:
+            dim (int)           -- the number of channels in the conv layer.
+            padding_type (str)  -- the name of padding layer: reflect | replicate | zero
+            norm_layer          -- normalization layer
+            use_dropout (bool)  -- if use dropout layers.
+            use_bias (bool)     -- if the conv layer uses bias or not
+        Returns a conv block (with a conv layer, a normalization layer, and a non-linearity layer (ReLU))
+        """
+        conv_block = []
+        p = 0
+        if padding_type == 'reflect':
+            conv_block += [nn.ReflectionPad2d(1)]
+        elif padding_type == 'replicate':
+            conv_block += [nn.ReplicationPad3d(1)]
+        elif padding_type == 'zero':
+            p = 1
+        else:
+            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+
+        conv_block += [nn.Conv3d(dim, dim, kernel_size=3, padding=p, bias=use_bias), norm_layer(dim), nn.ReLU(True)]
+        if use_dropout:
+            conv_block += [nn.Dropout(0.5)]
+
+        p = 0
+        if padding_type == 'reflect':
+            conv_block += [nn.ReflectionPad2d(1)]
+        elif padding_type == 'replicate':
+            conv_block += [nn.ReplicationPad3d(1)]
+        elif padding_type == 'zero':
+            p = 1
+        else:
+            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+        conv_block += [nn.Conv3d(dim, dim, kernel_size=3, padding=p, bias=use_bias), norm_layer(dim)]
+
         return nn.Sequential(*conv_block)
 
     def forward(self, x):
-        out = x + self.conv_block(x)
+        """Forward function (with skip connections)"""
+        out = x + self.conv_block(x)  # add skip connections
         return out
-
-
-class DeUpBlock(nn.Module):
-    """Up sample block using torch.nn.ConvTranspose3d"""
-    def __init__(self, inf, onf):
-        super(DeUpBlock, self).__init__()
-        sequence = [nn.ConvTranspose3d(inf, onf, kernel_size=3, stride=1, padding=1), lrelu]
-        self.deupblock = nn.Sequential(*sequence)
-
-    def forward(self, x):
-        out = self.deupblock(x)
-        return out
-
-
-
-class UpBlock(nn.Module):
-    """Up sample block using torch.nn.Upsample
-    """
-    def __init__(self, inf, onf):
-        super(UpBlock, self).__init__()
-        sequence = [nn.Conv3d(inf, onf, kernel_size=3, padding=1), lrelu]
-        sequence += [nn.Upsample(scale_factor=2)]
-        sequence += [nn.Conv3d(inf, onf, kernel_size=3, padding=1), lrelu]
-        self.upblock = nn.Sequential(*sequence)
-
-    def forward(self, x):
-        return self.upblock(x)
-
-
-class ResnetGenerator(nn.Module):
-    def __init__(self, input_nc=1, output_nc=1, ngf=64, n_residual_blocks=9, upsample_factor=2, deup=True):
-        """
-        Parameters:
-            n_blocks: the number of resnetblocks
-            deup: use deconv to upsample
-        """
-        assert upsample_factor % 2 == 0, "only support even upsample_factor"
-        super(ResnetGenerator,self).__init__()
-        self.n_residual_blocks = n_residual_blocks
-        self.upsample_factor = upsample_factor
-        self.ngf = ngf
-        self.deup = deup
-        # the first conv-lrelu
-        self.conv_blockl_1 = nn.Sequential(nn.Conv3d(input_nc,ngf,kernel_size=3,padding=1),lrelu)
-        # residual blocks
-        for i in range(self.n_residual_blocks):
-            self.add_module('residual_block' + str(i+1), ResnetBlock(ngf,ngf))
-        # the conv after residual blocks
-        self.conv_blockl_2 = nn.Sequential(nn.Conv3d(ngf, ngf, kernel_size=3, padding=1),
-                                           nn.BatchNorm3d(ngf))
-        # upsample blocks
-        for i in range(int(self.upsample_factor/2)):
-            if self.deup:
-                self.add_module('de_upsample' + str(i+1), DeUpBlock(ngf, ngf))
-            else:
-                self.add_module('upsample' + str(i+1), UpBlock(ngf, ngf))
-        # the last conv
-        self.conv3 = nn.Conv3d(ngf, output_nc, kernel_size=3, padding=1)
-
-    def forward(self, x):
-        x = self.conv_blockl_1(x)
-        y = x.clone()
-        for i in range(self.n_residual_blocks):
-            y = self.__getattr__('residual_block' + str(i+1))(y)
-        # large skip connection
-        x = self.conv_blockl_2(y) + x
-
-        for i in range(int(self.upsample_factor/2)):
-            if self.deup:
-                x = self.__getattr__('de_upsample' + str(i + 1))(x)
-            else:
-                x = self.__getattr__('upsample' + str(i+1))(x)
-
-        return self.conv3(x)
 
 # -------------------------------
 
@@ -250,7 +279,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
 def build_netG(opt):
     if opt.netG == 'resnet':
-        generator = ResnetGenerator(n_residual_blocks=9, deup=True)
+        generator = ResnetGenerator(opt.img_channel, opt.img_channel, opt.ngf, use_dropout=True, n_blocks=9)
     elif opt.netG == 'Unet':
         generator = UnetGenerator(ngf=opt.ngf, use_dropout=True, norm_layer=nn.BatchNorm3d)
     else:
@@ -275,7 +304,7 @@ if __name__ == '__main__':
 
     net = generator.cuda().eval()
 
-    data = Variable(torch.randn(4, 1, 128, 128, 64)).cuda()
+    data = Variable(torch.randn(opt.batch_size[0], opt.img_channel, opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])).cuda()
 
     out = net(data)
 

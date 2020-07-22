@@ -294,7 +294,7 @@ if __name__ == "__main__":
         net = build_netG(opt).cuda()  # load the network Unet
 
     else:
-        torch.cuda.set_device(args.gpu_id)
+        torch.cuda.set_device(int(args.gpu_id))
         net = build_netG(opt).cuda()
 
     net.load_state_dict(new_state_dict(args.weights))

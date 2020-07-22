@@ -174,7 +174,7 @@ if __name__ == '__main__':
     discriminator = build_netD(opt)
     net = discriminator.cuda().eval()
 
-    data= Variable(torch.randn(4, 1, 128, 128, 64)).cuda()
+    data= Variable(torch.randn(opt.batch_size[0], opt.img_channel, opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])).cuda()
 
     data = torch.cat((data, data), 1)
     out = net(data)
