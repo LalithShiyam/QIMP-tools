@@ -157,9 +157,7 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         # Second, G(A) = B
         loss_g_l1 = criterion_pixelwise(fake_b, real_b) * opt.lamb
 
-        costrain = Cor_CoeLoss(fake_b, real_b) * opt.lamb
-
-        generator_total_loss = loss_g_gan + loss_g_l1 + costrain
+        generator_total_loss = loss_g_gan + loss_g_l1
 
         mean_generator_total_loss += generator_total_loss
         generator_total_loss.backward()

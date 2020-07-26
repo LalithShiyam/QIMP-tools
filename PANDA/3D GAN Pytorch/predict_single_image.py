@@ -23,10 +23,10 @@ from collections import OrderedDict
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--multi_gpu', default=True, help='Multi or single Gpu')
-parser.add_argument('--gpu_id', default='2,3', help='Select the GPU')
-parser.add_argument("--image", type=str, default='./Data_folder/image.nii')
+parser.add_argument('--gpu_id', default='1', help='Select the GPU')
+parser.add_argument("--image", type=str, default='./Data_folder/test/patient_5/image.nii')
 parser.add_argument("--label", type=str, default=None)
-parser.add_argument("--result", type=str, default='./Data_folder/result.nii', help='path to the .nii result to save')
+parser.add_argument("--result", type=str, default='./Data_folder/test/patient_5/result.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./checkpoints/g_epoch_200.pth', help='generator weights to load')
 parser.add_argument("--resample", default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(0.625, 0.625, 1), help='New resolution')
@@ -180,11 +180,15 @@ def inference(write_image, model, image_path, label_path, result_path, resample,
         for i in range(len(batches)):
             batch = batches[i]
 
+            batch = (batch - 127.5) / 127.5
+
             batch = torch.from_numpy(batch[np.newaxis, :, :, :])
             batch = Variable(batch.cuda())
 
             pred = model(batch)
             pred = pred.squeeze().data.cpu().numpy()
+
+            pred = (pred * 127.5) + 127.5
 
             istart = ijk_patch_indices[i][0][0]
             iend = ijk_patch_indices[i][0][1]
@@ -199,11 +203,15 @@ def inference(write_image, model, image_path, label_path, result_path, resample,
         for i in tqdm(range(len(batches))):
             batch = batches[i]
 
+            batch = (batch - 127.5) / 127.5
+
             batch = torch.from_numpy(batch[np.newaxis, :, :, :])
             batch = Variable(batch.cuda())
 
             pred = model(batch)
             pred = pred.squeeze().data.cpu().numpy()
+
+            pred = (pred * 127.5) + 127.5
 
             istart = ijk_patch_indices[i][0][0]
             iend = ijk_patch_indices[i][0][1]

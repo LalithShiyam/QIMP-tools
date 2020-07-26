@@ -477,6 +477,9 @@ class NifitDataSet(torch.utils.data.Dataset):
         image_np = np.transpose(image_np, (2, 1, 0))
         label_np = np.transpose(label_np, (2, 1, 0))
 
+        label_np = (label_np - 127.5) / 127.5
+        image_np = (image_np - 127.5) / 127.5
+
         image_np = image_np[np.newaxis, :, :, :]
         label_np = label_np[np.newaxis, :, :, :]
 

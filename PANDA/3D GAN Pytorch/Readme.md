@@ -9,14 +9,7 @@ This is the Torch version of the first repository of PANDA (https://github.com/L
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
 
-# Examples
 
-Sample images (axial and coronal views): on the left side are the early PET frames, in the middle the output of the 3D GAN and on the right side the corresponding late PET frame
-
-![Low dose](Images/low_dose_axial.gif)![GAN](Images/gan_axial.gif)![High dose](Images/high_dose_axial.gif)
-*******************************************************************************
-![Low dose](Images/low_dose_coronal.gif)![GAN](Images/gan_coronal.gif)![High dose](Images/high_dose_coronal.gif)
-*******************************************************************************
 # Requirements
 
 - MATLAB R2016a or higher
@@ -53,9 +46,8 @@ Sample images (axial and coronal views): on the left side are the early PET fram
 
 *******************************************************************************
 ### Pre-trained-model
-The weights are available and you can download them from the following links:
-- generator: https://drive.google.com/file/d/1_pj3wdPF1F5GwaKVGbBQbpFNTko_IA5L/view?usp=sharing
-- discriminator: https://drive.google.com/file/d/1Oi3J8N8xtqMgSA3FSXnqpHFFKLNUM-U7/view?usp=sharing
+The weights for generator and discriminator are available and you can download them from the following link:
+- https://drive.google.com/drive/folders/11cNxT9rx6ztX8jA-dppeengsiW7DWzbY?usp=sharing
 *******************************************************************************
 
 # Tutorial for 3DGAN

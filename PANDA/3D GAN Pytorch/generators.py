@@ -122,8 +122,8 @@ class ResnetGenerator(nn.Module):
         # model += [nn.ReflectionPad2d(3)]
         model += [nn.ReplicationPad3d(3)]
         model += [nn.Conv3d(ngf, output_nc, kernel_size=7, padding=0)]
-        # model += [nn.Tanh()]
-        model += [nn.ReLU()]
+        model += [nn.Tanh()]
+
 
         self.model = nn.Sequential(*model)
 
@@ -250,7 +250,7 @@ class UnetSkipConnectionBlock(nn.Module):
         if outermost:
             upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1)
             down = [downconv]
-            up = [uprelu, upconv, nn.ReLU(True)]
+            up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
         elif innermost:
             upconv = nn.ConvTranspose3d(inner_nc, outer_nc, kernel_size=4, stride=2, padding=1, bias=use_bias)
@@ -304,7 +304,7 @@ if __name__ == '__main__':
 
     net = generator.cuda().eval()
 
-    data = Variable(torch.randn(opt.batch_size[0], opt.img_channel, opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])).cuda()
+    data = Variable(torch.randn(int(opt.batch_size), int(opt.img_channel), int(opt.patch_size[0]), int(opt.patch_size[1]), int(opt.patch_size[2]))).cuda()
 
     out = net(data)
 
