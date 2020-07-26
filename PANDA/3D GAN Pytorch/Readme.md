@@ -9,6 +9,9 @@ This is the Torch version of the first repository of PANDA (https://github.com/L
 
 ![PANDA-workflow](Images/PANDA-workflow.png)
 
+# Examples
+Sample of the logger, which helps to monitor the training process to convert early frames into late frames:
+![logger](Images/epoch_162.png)
 
 # Requirements
 
@@ -94,10 +97,6 @@ python train.py
 There are several parameters you can set for the training; depending on your dataset characteristics you can modify the default ones by opening the init.py file. 
 The description for each parameter included is in the init.py source file.
 
-Sample of the logger, which helps to monitor the training process
-![logger](Images/epoch_162.png)
-
-
 ## Inference:
 
 Launch the inference on only one image (example):
@@ -109,6 +108,11 @@ python predict_single_image.py --image "path to early frame" --result "path wher
 ```console
 C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\g_epoch_200.pth
 ```
+
+### CGan Usage
+
+The platform can be used for other image-translation tasks: here there is an example to convert T1 to T2 MR brain images.
+![logger2](Images/epoch_126.png)
 
 ## Citations
 
