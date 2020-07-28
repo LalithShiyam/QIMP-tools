@@ -1,7 +1,7 @@
 pillow
 scikit-learn
 simpleITK
-keras
+keras==2.2.4
 scikit-image
 pandas
 pydicom

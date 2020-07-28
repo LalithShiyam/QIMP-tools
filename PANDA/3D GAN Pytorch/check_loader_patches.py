@@ -1,21 +1,17 @@
-from utils.NiftiDataset import *
 import matplotlib.pyplot as plt
-from utils.data_generator import *
+from utils.NiftiDataset import *
+from torch.utils.data import DataLoader
 import utils.NiftiDataset as NiftiDataset
 import argparse
 
-''' The script show the patches of the data loader (volume and label patches) fed to the network. Before running it, the .txt files with the list
-of samples used for the training must be created (--Create_training_test_dataset from the command line of the main.py script)'''
-
 parser = argparse.ArgumentParser()
-
-parser.add_argument("--save_dir", type=str, default='./Data_folder/', help='path to early frames and late frames dose folders')
+parser.add_argument("--data_path", type=str, default='./Data_folder/train/')
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
-parser.add_argument("--new_resolution", type=float, default=(1.5, 1.5, 1.5), help='New resolution')
+parser.add_argument("--new_resolution", type=float, default=(0.6, 0.6, 2.5), help='New resolution')
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 parser.add_argument("--drop_ratio", type=float, nargs=1, default=0, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
-parser.add_argument("--min_pixel", type=int, nargs=1, default=20, help="Percentage of minimum non-zero pixels in the cropped label")
+parser.add_argument("--min_pixel", type=int, nargs=1, default=1, help="Percentage of minimum non-zero pixels in the cropped label")
 
 args = parser.parse_args()
 
@@ -29,8 +25,10 @@ trainTransforms = [
                             args.drop_ratio, min_pixel)
 ]
 
-train_gen = data_generator(images_list=args.save_dir + '/' + 'train.txt', labels_list=args.save_dir + '/' + 'train_labels.txt',
-                         batch_size=args.batch_size, Transforms=trainTransforms)
+train_list = create_list(args.data_path)
+
+train_gen = NifitDataSet(train_list, direction='image_to_label', transforms=trainTransforms, train=True)
+train_loader = DataLoader(train_gen, batch_size=args.batch_size, shuffle=True)
 
 
 class IndexTracker(object):
@@ -58,6 +56,7 @@ class IndexTracker(object):
         self.ax.set_ylabel('slice %s' % self.ind)
         self.im.axes.figure.canvas.draw()
 
+
 def plot3d(image):
     original=image
     original = np.rot90(original, k=-1)
@@ -67,17 +66,14 @@ def plot3d(image):
     plt.show()
 
 
-batch1 = next(train_gen)
-vol = batch1[0]
-mask = batch1[1]
+batch1 = train_loader.dataset[0]
+vol = batch1[0].numpy()
+mask = batch1[1].numpy()
 
 print(vol.shape)
 
-vol = np.squeeze(vol, axis=4)
 vol = np.squeeze(vol, axis=0)
-mask = np.squeeze(mask, axis=4)
 mask = np.squeeze(mask, axis=0)
 
 plot3d(vol)
 plot3d(mask)
-

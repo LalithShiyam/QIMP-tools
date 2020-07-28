@@ -1,40 +1,40 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-from utils.NiftiDataset import *
-import utils.NiftiDataset as NiftiDataset
 from tqdm import tqdm
 import datetime
-from networks.generator import *
 import argparse
 import matplotlib.pyplot as plt
 import math
 import scipy
-
-''' The script run the inference on the single early frame image by the user. Normalization is performed and images are scaled to interval values: 0-255.
-    The path of the input image and the path to save the result must be specified in the command line. To have fewer patches to inference for one image,
-    please increase the stride_inplane and stride_layer values. The values must be less than the image size to avoid errors. '''
+import torch
+from torch.autograd import Variable
+import sys
+import os
+import torch
+from utils.utils import *
+import torch.optim as optim
+import torch.nn as nn
+from generators import build_netG
+from discriminators import build_netD
+from utils.NiftiDataset import *
+import utils.NiftiDataset as NiftiDataset
+from torch.utils.data import DataLoader
+from collections import OrderedDict
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--Use_GPU', action='store_true', default=True, help='Use the GPU')
-parser.add_argument('--Select_GPU', type=str, default='0', help='Select the GPU')
-parser.add_argument("--image", type=str, default='./Data_folder/volumes/HC014 test_MoCo_PET_Frame_25.nii', help='path to the .nii low dose image')
-parser.add_argument("--result", type=str, default='./Data_folder/volumes/prova.nii', help='path to the .nii result to save')
-parser.add_argument("--gen_weights", type=str, default='./History/weights/frame25.h5', help='generator weights to load')
-# Training parameters
+parser.add_argument('--multi_gpu', default=True, help='Multi or single Gpu')
+parser.add_argument('--gpu_id', default='1', help='Select the GPU')
+parser.add_argument("--image", type=str, default='./Data_folder/test/patient_5/image.nii')
+parser.add_argument("--label", type=str, default=None)
+parser.add_argument("--result", type=str, default='./Data_folder/test/patient_5/result.nii', help='path to the .nii result to save')
+parser.add_argument("--weights", type=str, default='./checkpoints/g_epoch_200.pth', help='generator weights to load')
 parser.add_argument("--resample", default=False, help='Decide or not to resample the images to a new resolution')
-parser.add_argument("--new_resolution", type=float, default=(2.086, 2.086, 2.031), help='New resolution')
-parser.add_argument("--input_channels", type=float, nargs=1, default=1, help="Input channels")
-parser.add_argument("--output_channels", type=float, nargs=1, default=1, help="Output channels (Current implementation supports one output channel")
+parser.add_argument("--new_resolution", type=float, default=(0.625, 0.625, 1), help='New resolution')
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
-# Inference parameters
-parser.add_argument("--stride_inplane", type=int, nargs=1, default=64, help="Stride size in 2D plane")
+parser.add_argument("--stride_inplane", type=int, nargs=1, default=16, help="Stride size in 2D plane")
 parser.add_argument("--stride_layer", type=int, nargs=1, default=16, help="Stride size in z direction")
 args = parser.parse_args()
-
-if args.Use_GPU is True:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.Select_GPU)
-
 
 def from_numpy_to_itk(image_np,image_itk):
     image_np = np.transpose(image_np, (2, 1, 0))
@@ -54,14 +54,15 @@ def prepare_batch(image, ijk_patch_indices):
             image_batch.append(image_patch)
 
         image_batch = np.asarray(image_batch)
-        image_batch = image_batch[:, :, :, :, np.newaxis]
+        # image_batch = image_batch[:, :, :, :, np.newaxis]
         image_batches.append(image_batch)
 
     return image_batches
 
 
 # inference single image
-def inference(write_image, model, image_path, result_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size=1):
+def inference(write_image, model, image_path, label_path, result_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size=1, segmentation=True, Logger=True):
+
 
     # create transformations to image and labels
     transforms1 = [
@@ -78,12 +79,11 @@ def inference(write_image, model, image_path, result_path, resample, resolution,
     image = reader.Execute()
 
     # normalize the image
-    normalizeFilter = sitk.NormalizeImageFilter()
-    resacleFilter = sitk.RescaleIntensityImageFilter()
-    resacleFilter.SetOutputMaximum(255)
-    resacleFilter.SetOutputMinimum(0)
-    image = normalizeFilter.Execute(image)  # set mean and std deviation
-    image = resacleFilter.Execute(image)
+    image = Normalization(image)
+
+    castImageFilter = sitk.CastImageFilter()
+    castImageFilter.SetOutputPixelType(sitk.sitkFloat32)
+    image = castImageFilter.Execute(image)
 
     # create empty label in pair with transformed image
     label_tfm = sitk.Image(image.GetSize(), sitk.sitkFloat32)
@@ -119,13 +119,16 @@ def inference(write_image, model, image_path, result_path, resample, resolution,
     image_np = np.transpose(image_np, (2, 1, 0))
     label_np = np.transpose(label_np, (2, 1, 0))
 
+    if segmentation is True:
+        label_np = np.around(label_np)
+
     # ----------------- Padding the image if the z dimension still is not even ----------------------
 
     if (image_np.shape[2] % 2) == 0:
         Padding = False
     else:
-        image_np = np.pad(image_np, ((0,0), (0,0), (0, 1)), 'constant')
-        label_np = np.pad(label_np, ((0, 0), (0, 0), (0, 1)), 'constant')
+        image_np = np.pad(image_np, ((0,0), (0,0), (0, 1)), 'edge')
+        label_np = np.pad(label_np, ((0, 0), (0, 0), (0, 1)), 'edge')
         Padding = True
 
     # ------------------------------------------------------------------------------------------------
@@ -172,24 +175,60 @@ def inference(write_image, model, image_path, result_path, resample, resolution,
 
     batches = prepare_batch(image_np, ijk_patch_indices)
 
-    for i in tqdm(range(len(batches))):
-        batch = batches[i]
+    if Logger is True:
 
-        pred = model.predict(batch, verbose=2, batch_size=1)  # predict segmentation
-        pred = np.squeeze(pred, axis=4)
+        for i in range(len(batches)):
+            batch = batches[i]
 
-        istart = ijk_patch_indices[i][0][0]
-        iend = ijk_patch_indices[i][0][1]
-        jstart = ijk_patch_indices[i][0][2]
-        jend = ijk_patch_indices[i][0][3]
-        kstart = ijk_patch_indices[i][0][4]
-        kend = ijk_patch_indices[i][0][5]
-        label_np[istart:iend, jstart:jend, kstart:kend] += pred[0, :, :, :]
-        weight_np[istart:iend, jstart:jend, kstart:kend] += 1.0
+            batch = (batch - 127.5) / 127.5
 
-    print("{}: Evaluation complete".format(datetime.datetime.now()))
+            batch = torch.from_numpy(batch[np.newaxis, :, :, :])
+            batch = Variable(batch.cuda())
+
+            pred = model(batch)
+            pred = pred.squeeze().data.cpu().numpy()
+
+            pred = (pred * 127.5) + 127.5
+
+            istart = ijk_patch_indices[i][0][0]
+            iend = ijk_patch_indices[i][0][1]
+            jstart = ijk_patch_indices[i][0][2]
+            jend = ijk_patch_indices[i][0][3]
+            kstart = ijk_patch_indices[i][0][4]
+            kend = ijk_patch_indices[i][0][5]
+            label_np[istart:iend, jstart:jend, kstart:kend] += pred[:, :, :]
+            weight_np[istart:iend, jstart:jend, kstart:kend] += 1.0
+    else:
+
+        for i in tqdm(range(len(batches))):
+            batch = batches[i]
+
+            batch = (batch - 127.5) / 127.5
+
+            batch = torch.from_numpy(batch[np.newaxis, :, :, :])
+            batch = Variable(batch.cuda())
+
+            pred = model(batch)
+            pred = pred.squeeze().data.cpu().numpy()
+
+            pred = (pred * 127.5) + 127.5
+
+            istart = ijk_patch_indices[i][0][0]
+            iend = ijk_patch_indices[i][0][1]
+            jstart = ijk_patch_indices[i][0][2]
+            jend = ijk_patch_indices[i][0][3]
+            kstart = ijk_patch_indices[i][0][4]
+            kend = ijk_patch_indices[i][0][5]
+            label_np[istart:iend, jstart:jend, kstart:kend] += pred[:, :, :]
+            weight_np[istart:iend, jstart:jend, kstart:kend] += 1.0
+
+        print("{}: Evaluation complete".format(datetime.datetime.now()))
+
     # eliminate overlapping region using the weighted value
     label_np = (np.float32(label_np) / np.float32(weight_np) + 0.01)
+
+    if segmentation is True:
+        label_np = abs(np.around(label_np))
 
     # removed the 1 pad on z
     if Padding is True:
@@ -209,26 +248,64 @@ def inference(write_image, model, image_path, result_path, resample, resolution,
 
         print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
         # label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')   # keep this commented
-        label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
-        label.SetDirection(image.GetDirection())
-        label.SetOrigin(image.GetOrigin())
-        label.SetSpacing(image.GetSpacing())
+        if segmentation is True:
+            label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
+            label_array = np.around(sitk.GetArrayFromImage(label))
+            label = sitk.GetImageFromArray(label_array)
+            label.SetDirection(image.GetDirection())
+            label.SetOrigin(image.GetOrigin())
+            label.SetSpacing(image.GetSpacing())
+        else:
+            label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkBSpline)
+            label.SetDirection(image.GetDirection())
+            label.SetOrigin(image.GetOrigin())
+            label.SetSpacing(image.GetSpacing())
+
 
     else:
         label = label
+
+    if label_path is not None and segmentation is True:
+
+        reader = sitk.ImageFileReader()
+        reader.SetFileName(label_path)
+        true_label = reader.Execute()
+
+        true_label = sitk.GetArrayFromImage(true_label)
+        predicted = sitk.GetArrayFromImage(label)
+
+        dice = dice_coeff(predicted,true_label)
+
 
     writer.SetFileName(result_path)
     if write_image is True:
         writer.Execute(label)
         print("{}: Save evaluate label at {} success".format(datetime.datetime.now(), result_path))
 
-    return label
+    if label_path is not None and segmentation is True:
+        print("Dice score:", dice)
+
+        return label, dice
+
+    else:
+        dice = None
+        return label, dice
 
 
 if __name__ == "__main__":
 
-    input_dim = [args.batch_size,  args.patch_size[0],  args.patch_size[1], args.patch_size[2], args.input_channels]
-    model = UNetGenerator(input_dim=input_dim)
-    model.load_weights(args.gen_weights)
+    from init import Options
+    opt = Options().parse()
 
-    result = inference(True, model, args.image, args.result, args.resample, args.new_resolution, args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer)
+    if args.multi_gpu is True:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id  # Multi-gpu selector for training
+        net = build_netG(opt).cuda()  # load the network Unet
+
+    else:
+        torch.cuda.set_device(int(args.gpu_id))
+        net = build_netG(opt).cuda()
+
+    net.load_state_dict(new_state_dict(args.weights))
+
+    result, dice = inference(True, net, args.image, None, args.result, args.resample, args.new_resolution,
+                       args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer, segmentation=False, Logger=False)
