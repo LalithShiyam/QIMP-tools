@@ -109,9 +109,10 @@ python predict_single_image.py --image "path to early frame" --result "path wher
 C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\g_epoch_200.pth
 ```
 
-### CGan Usage
+## CGan Usage
 
 The platform can be used for other image-translation tasks: here there is an example to convert T1 to T2 MR brain images.
+The free dataset is available at https://brain-development.org/ixi-dataset/
 ![logger2](Images/epoch_126.png)
 
 ## Citations
