@@ -3,6 +3,7 @@ import os
 import shutil
 from time import time
 import re
+import argparse
 import numpy as np
 import SimpleITK as sitk
 import scipy.ndimage as ndimage
@@ -30,29 +31,63 @@ def lstFiles(Path):
     return images_list
 
 
-list_images=lstFiles('./volumes_adjusted')
-list_labels=lstFiles('./labels')
+parser = argparse.ArgumentParser()
+parser.add_argument('--images', default='./Data_folder/volumes', help='path to the images a (early frames)')
+parser.add_argument('--labels', default='./Data_folder/labels', help='path to the images b (late frames)')
+parser.add_argument('--split', default=5, help='number of images for testing')
+args = parser.parse_args()
 
-if not os.path.isdir('./Data_folder'):
-    os.mkdir('./Data_folder')
+if __name__ == "__main__":
 
-for i in range(len(list_images)):
-    a = list_images[i]
-    b = list_labels[i]
+    list_images = lstFiles(args.images)
+    list_labels = lstFiles(args.labels)
 
-    print(a)
+    if not os.path.isdir('./Data_folder/train'):
+        os.mkdir('./Data_folder/train')
 
-    save_directory = os.path.join(str('./Data_folder/patient_' + str(i)))
+    if not os.path.isdir('./Data_folder/test'):
+        os.mkdir('./Data_folder/test')
 
-    if not os.path.isdir(save_directory):
-        os.mkdir(save_directory)
+    for i in range(len(list_images)-int(args.split)):
 
-    label = sitk.ReadImage(b)
-    image = sitk.ReadImage(a)
+        a = list_images[int(args.split)+i]
+        b = list_labels[int(args.split)+i]
 
-    label_directory = os.path.join(str(save_directory), 'label.nii')
-    image_directory = os.path.join(str(save_directory), 'image.nii')
+        print(a)
 
-    sitk.WriteImage(image, image_directory)
-    sitk.WriteImage(label, label_directory)
+        save_directory = os.path.join(str('./Data_folder/train/patient_' + str(i)))
+
+        if not os.path.isdir(save_directory):
+            os.mkdir(save_directory)
+
+        label = sitk.ReadImage(b)
+        image = sitk.ReadImage(a)
+
+        label_directory = os.path.join(str(save_directory), 'label.nii')
+        image_directory = os.path.join(str(save_directory), 'image.nii')
+
+        sitk.WriteImage(image, image_directory)
+        sitk.WriteImage(label, label_directory)
+
+
+    for i in range(int(args.split)):
+
+        a = list_images[i]
+        b = list_labels[i]
+
+        print(a)
+
+        save_directory = os.path.join(str('./Data_folder/test/patient_' + str(i)))
+
+        if not os.path.isdir(save_directory):
+            os.mkdir(save_directory)
+
+        label = sitk.ReadImage(b)
+        image = sitk.ReadImage(a)
+
+        label_directory = os.path.join(str(save_directory), 'label.nii')
+        image_directory = os.path.join(str(save_directory), 'image.nii')
+
+        sitk.WriteImage(image, image_directory)
+        sitk.WriteImage(label, label_directory)
 

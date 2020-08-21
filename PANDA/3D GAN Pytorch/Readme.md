@@ -102,11 +102,11 @@ The description for each parameter included is in the init.py source file.
 Launch the inference on only one image (example):
 
 ```console
-python predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --gen_weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
+python predict_single_image.py --image "path to early frame" --result "path where to save the late frame" --weights "path to the weights of the generator network to load"  --patch_size=(128,128,64)
 ```
 ### Sample script inference
 ```console
-C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --gen_weights C:\Users\David\Desktop\g_epoch_200.pth
+C:\Users\David\Desktop\3D GAN>python predict_single_image.py --image C:\Users\David\Desktop\test_image.nii --result C:\Users\David\Desktop\result.nii --weights C:\Users\David\Desktop\g_epoch_200.pth
 ```
 
 ## CGan Usage

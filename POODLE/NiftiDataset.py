@@ -14,10 +14,10 @@ import torch.utils.data
 # ------- Swithes -------
 
 interpolator_image = sitk.sitkLinear                 # interpolator image
-interpolator_label = sitk.sitkLinear                  # interpolator label
+interpolator_label = sitk.sitkNearestNeighbor                  # interpolator label
 
 _interpolator_image = 'linear'          # interpolator image
-_interpolator_label = 'linear'          # interpolator label
+_interpolator_label = 'nearest'          # interpolator label
 
 Segmentation = True
 

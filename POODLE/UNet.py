@@ -156,7 +156,7 @@ if __name__ == '__main__':
     torch.cuda.set_device(0)
     net =UNet(residual='pool').cuda().eval()
 
-    data = Variable(torch.randn(1, 1, 128, 128, 32)).cuda()
+    data = Variable(torch.randn(1, 1, 128, 128, 128)).cuda()
 
     out = net(data)
 
