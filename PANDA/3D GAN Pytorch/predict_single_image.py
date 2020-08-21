@@ -297,8 +297,9 @@ if __name__ == "__main__":
     from init import Options
     opt = Options().parse()
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id  # Multi-gpu selector for training
+
     if args.multi_gpu is True:
-        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id  # Multi-gpu selector for training
         net = build_netG(opt).cuda()  # load the network Unet
 
     else:
