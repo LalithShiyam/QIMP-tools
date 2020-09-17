@@ -1,4 +1,5 @@
 # SALMON for MALAMUTE
+![Salmon-logo-1](images/salmon_for_malamute.JPG)
 *******************************************************************************
 ## Requirements
 See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and we install all the requirements with:
