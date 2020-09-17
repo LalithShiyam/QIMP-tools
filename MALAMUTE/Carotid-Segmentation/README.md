@@ -8,9 +8,11 @@ See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and 
 Temporary best weights can be downloaded at the link:
 https://drive.google.com/file/d/1utti9-3yOVo4xmhLNnfgM3yYSPNTEAoA/view?usp=sharing
 
-Training data (14 images): 0.88 dice score
-Validation data (3 images): 0.842 dice score
-Testing data (1 image): 0.82 dice score
+- Training data (14 images): 0.88 dice score
+- Validation data (3 images): 0.842 dice score
+- Testing data (1 image): 0.82 dice score
+
+Images, labels and temporary results are available (with authorization) at https://drive.google.com/file/d/1mwALphu7WDqsBz2vlxg1cam53RwSH5Y7/view?usp=sharing
 *******************************************************************************
 
 ## Python scripts and their function
