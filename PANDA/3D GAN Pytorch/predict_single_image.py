@@ -23,7 +23,7 @@ from collections import OrderedDict
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--multi_gpu', default=True, help='Multi or single Gpu')
-parser.add_argument('--gpu_id', default='1', help='Select the GPU')
+parser.add_argument('--gpu_ids', default='1', help='Select the GPU')
 parser.add_argument("--image", type=str, default='./Data_folder/test/patient_5/image.nii')
 parser.add_argument("--label", type=str, default=None)
 parser.add_argument("--result", type=str, default='./Data_folder/test/patient_5/result.nii', help='path to the .nii result to save')
@@ -297,13 +297,12 @@ if __name__ == "__main__":
     from init import Options
     opt = Options().parse()
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id  # Multi-gpu selector for training
-
     if args.multi_gpu is True:
+        os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_ids  # Multi-gpu selector for training
         net = build_netG(opt).cuda()  # load the network Unet
 
     else:
-        torch.cuda.set_device(int(args.gpu_id))
+        torch.cuda.set_device(int(args.gpu_ids))
         net = build_netG(opt).cuda()
 
     net.load_state_dict(new_state_dict(args.weights))

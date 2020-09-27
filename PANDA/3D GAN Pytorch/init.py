@@ -55,6 +55,7 @@ class Options():
         parser.add_argument('--image', default=None, help='Keep this empty and go to predict_single_image script')
         parser.add_argument('--result', default=None, help='Keep this empty and go to predict_single_image script')
         parser.add_argument('--weights', default=None, help='Keep this empty and go to predict_single_image script')
+        parser.add_argument('--multi_gpu', default=None, help='Keep this empty and go to predict_single_image script')
 
         self.initialized = True
         return parser
