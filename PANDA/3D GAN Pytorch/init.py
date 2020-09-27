@@ -50,6 +50,12 @@ class Options():
         parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         parser.add_argument('--resume', default=0, type=int, help='resume training or not default:0/not')
 
+        # Inference
+        # This is just a trick to make the predict script working
+        parser.add_argument('--image', default=None, help='Keep this empty and go to predict_single_image script')
+        parser.add_argument('--result', default=None, help='Keep this empty and go to predict_single_image script')
+        parser.add_argument('--weights', default=None, help='Keep this empty and go to predict_single_image script')
+
         self.initialized = True
         return parser
 
