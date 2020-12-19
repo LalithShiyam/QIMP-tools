@@ -35,12 +35,12 @@ path2ConvFolder=[CNGinputs.where2Store,filesep,convertedFolder];
 cd(CNGinputs.path2Nifti)
 niftiFiles=dir('*.nii');
 parfor lp=1:length(niftiFiles)
-    hdrInfo=niftiinfo(niftiFiles(lp).name);
+    hdrInfo=spm_vol(niftiFiles(lp).name);
     hdrInfo.Description = 'cropped for GANS: Internal use only!';
     croppedFileName=['crpd-',niftiFiles(lp).name];
     hdrInfo.Filename=croppedFileName;
     hdrInfo.ImageSize=xyzDim;
-    imgVol=niftiread(niftiFiles(lp).name);
+    imgVol=spm_read_vols(spm_vol((niftiFiles(lp).name)));
     croppedVol=imgVol;
     xMax=size(imgVol,1);
     yMax=size(imgVol,2);
@@ -48,7 +48,7 @@ parfor lp=1:length(niftiFiles)
     croppedVol=croppedVol(cropRange+1:xMax-cropRange,cropRange+1:yMax-cropRange,:);
     emptyVol=zeros([xyzDim(1) xyzDim(2) (xyzDim(3)-size(imgVol,3))]);
     croppedVol=cat(3,croppedVol,int16(emptyVol));
-    niftiwrite(croppedVol,croppedFileName,hdrInfo);
+    spm_write_vol(croppedVol,croppedFileName,hdrInfo);
     disp(['Writing ',croppedFileName,'...']);
     movefile(croppedFileName,path2ConvFolder);
 end
