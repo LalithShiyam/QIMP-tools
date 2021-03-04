@@ -1,21 +1,21 @@
 ![Salmon-logo-1](images/salmon.JPG)
-# SALMON: Segmentation deep learning ALgorithm based on MONai toolbox
+# SALMON v.2: Segmentation deep learning ALgorithm based on MONai toolbox
 SALMON is a computational toolbox for segmentation using neural networks (3D patches-based segmentation)
 SALMON is based on MONAI: a PyTorch-based, open-source framework for deep learning in healthcare imaging. (https://github.com/Project-MONAI/MONAI)
 *******************************************************************************
 ## Requirements
-See requirements.txt list. We use "nvcr.io/nvidia/pytorch:19.03-py3" docker and we install all the requirements with:
-"pip install -r requirements.txt"
+We download the official MONAI DockerHub, with the latest MONAI version. Please visit https://docs.monai.io/en/latest/installation.html
+Additional packages can be installed with "pip install -r requirements.txt"
 *******************************************************************************
 ## Python scripts and their function
 
-- organize_folder_structure.py: Organize the data in the folder structure for the network
+- organize_folder_structure.py: Organize the data in the folder structure (training,validation,testing) for the network
 
 - init.py: List of options used to train the network. 
 
 - check_loader_patches: Shows example of patches fed to the network during the training  
 
-- networks.py: The architectures available for segmentation.
+- networks.py: The architecture available for segmentation is a nn-Unet.
 
 - train.py: Runs the training
 
@@ -47,10 +47,12 @@ Use first "organize_folder_structure.py" to create organize the data in the foll
 	|   |   |   └── label4.nii
 	|   |   └── test             
 	|   |   |   ├── label5.nii              
-	|   |   |   └── label6.nii 
+	|   |   |   └── label6.nii
+
+Modify the input parameters to select folders and divide the dataset 
 *******************************************************************************
 ### Training:
-Modify the "init.py" to set the parameters and start the training/testing on the data.
+Modify the "init.py" to set the parameters and start the training/testing on the data. Read the descriptions for each parameter.
 Afterwards launch the train.py for training. Tensorboard is available to monitor the training:	
 
 ![training](images/salmon3.JPG)![training2](images/salmon4.JPG)![training3](images/salmon5.JPG)![training2´4](images/salmon6.JPG)
@@ -65,7 +67,8 @@ Launch "predict_single_image.py" to test the network. Modify the parameters in t
 *******************************************************************************
 ### Tips:
 Use and modify "check_loader_patches.py" to check the patches fed during training. 
-Use and modify "networks.py" to modify the network and check the number of parameters. 
+The "networks.py" calls the nn-Unet, which adapts itself to the input data (resolution and patches size) 
+Is it possible to add other networks, but for segmentation the U-net architecture is the state of the art.
 
 
 ### Sample script inference
@@ -73,7 +76,10 @@ Use and modify "networks.py" to modify the network and check the number of param
 python predict_single_image.py --image './Data_folder/images/train/image13.nii' --label './Data_folder/labels/train/label13.nii' --result './Data_folder/results/train/prova.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
-### Future Development: TO DO list
+### Multi-channel segmentation: 
 
-- Add more networks structures in networks.py
-- Implement it for multilabel segmentation in the same script. (call multilabel losses)
+To implement the multilabel segmentation a few lines must be added:
+- In the transforms section of the data channels must added and concatenated
+- The loss function must be modified (Dice to softDice)
+
+Check the example at https://github.com/Project-MONAI/tutorials/blob/master/3d_segmentation/spleen_segmentation_3d.ipynb as example.
