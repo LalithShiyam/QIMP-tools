@@ -14,15 +14,15 @@ from utils import *
 from torch.autograd import Variable
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--multi_gpu', default=False, help='Multi or single Gpu')
-parser.add_argument('--gpu_id', default='0', help='Select the GPU')
-parser.add_argument("--image", type=str, default='./Data_folder/carotid/train_set/data_1/image.nii')
-parser.add_argument("--label", type=str, default='./Data_folder/carotid/train_set/data_1/label.nii')
+parser.add_argument('--multi_gpu', default=True, help='Multi or single Gpu')
+parser.add_argument('--gpu_id', default='0,1', help='Select the GPU')
+parser.add_argument("--image", type=str, default='./Data_folder/train_set/patient_1/image.nii')
+parser.add_argument("--label", type=str, default='./Data_folder/train_set/patient_1/label.nii')
 parser.add_argument("--result", type=str, default='./prova.nii', help='path to the .nii result to save')
 parser.add_argument("--weights", type=str, default='./History/Checkpoint/Best_Dice.pth.gz', help='generator weights to load')
-parser.add_argument("--resample", default=False, help='Decide or not to resample the images to a new resolution')
-parser.add_argument("--new_resolution", type=float, default=(1, 1, 2), help='New resolution')
-parser.add_argument("--patch_size", type=int, nargs=3, default=[64, 64, 64], help="Input dimension for the generator")
+parser.add_argument("--resample", default=True, help='Decide or not to resample the images to a new resolution')
+parser.add_argument("--new_resolution", type=float, default=(0.520833*1.3, 0.520833*1.3, 1*1.3) , help='New resolution')
+parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 parser.add_argument("--stride_inplane", type=int, nargs=1, default=32, help="Stride size in 2D plane")
 parser.add_argument("--stride_layer", type=int, nargs=1, default=32, help="Stride size in z direction")
@@ -89,6 +89,7 @@ def inference(write_image, model, image_path, label_path, result_path, resample,
 
     # keeping track on how much padding will be performed before the inference
     image_array = sitk.GetArrayFromImage(sample['image'])
+
     pad_x = patch_size_x - (patch_size_x - image_array.shape[2])
     pad_y = patch_size_x - (patch_size_y - image_array.shape[1])
     pad_z = patch_size_z - (patch_size_z - image_array.shape[0])
@@ -210,7 +211,7 @@ def inference(write_image, model, image_path, label_path, result_path, resample,
         print("{}: Resampling label back to original image space...".format(datetime.datetime.now()))
         # label = resample_sitk_image(label, spacing=image.GetSpacing(), interpolator='bspline')   # keep this commented
         if segmentation is True:
-            label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkLinear)
+            label = resize(label, (sitk.GetArrayFromImage(image)).shape[::-1], sitk.sitkNearestNeighbor)
             label_array = np.around(sitk.GetArrayFromImage(label))
             label = sitk.GetImageFromArray(label_array)
             label.SetDirection(image.GetDirection())
@@ -265,5 +266,6 @@ if __name__ == "__main__":
 
     net.load_state_dict(torch.load(args.weights))
 
-    result, dice = inference(True, net, args.image, None, args.result, args.resample, args.new_resolution,
-                       args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer, segmentation=True)
+    result, dice = inference(True, net, args.image, args.label, args.result, args.resample, args.new_resolution,
+                       args.patch_size[0],args.patch_size[1],args.patch_size[2], args.stride_inplane, args.stride_layer,segmentation=True)
+

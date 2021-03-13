@@ -35,14 +35,18 @@ names{lp}=niftyFiles(lp).name;
 end
 sortedNames=natsort(names);
 
-parfor lp=1:length(sortedNames)
+for lp=1:length(sortedNames)
 cd(pathToNiftiPET);
 disp(['Calculating gradient image for ',sortedNames{lp},'...'])
-img{lp}=niftiread(sortedNames{lp});
-gradImg{lp}=imgradient3(img{lp})/normalizationFactor;
+img{lp}=spm_read_vols(spm_vol((sortedNames{lp})));
+imgInfo=spm_vol(sortedNames{lp});
+gradImg{lp}=imgradient3(img{lp})./normalizationFactor;
+gradImg{lp}=gradImg{lp}./(mean(gradImg{lp}(:)));
 gradImgName=[sortedNames{lp}];
-%gradImgName=['Gradient-image-',sortedNames{lp}];
-niftiwrite(gradImg{lp},gradImgName);
+gradImgName=['Gradient-image-',sortedNames{lp}];
+imgInfo.fname=gradImgName;
+grads=(gradImg{lp});
+spm_write_vol(imgInfo,grads);
 movefile(gradImgName,where2Store)
 end
 end

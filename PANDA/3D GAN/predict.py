@@ -10,13 +10,16 @@ import math
 
 def inference_all(model, image_path, resample, resolution, patch_size_x, patch_size_y, patch_size_z, stride_inplane, stride_layer, batch_size):
 
-    case = image_path
+    case = image_path           # Dgx linux
     case = case.split('/')
     case = case[3]
     case = case.split('.')
     case = case[0]
 
-    # case = image_path
+    ''' It could be necessary to comment the previous lines and uncomment the lines below to generate the example images during the training.
+    It depends on the type of device used by the user'''
+
+    # case = image_path         # Windows
     # case = case.split('/')
     # case = case[2]
     # case = case.split('.')

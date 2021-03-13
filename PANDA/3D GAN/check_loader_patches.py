@@ -4,7 +4,7 @@ from utils.data_generator import *
 import utils.NiftiDataset as NiftiDataset
 import argparse
 
-''' The script show as the output of the data loader (volume and label patches) fed to the network. Before running it, the .txt files with the list
+''' The script show the patches of the data loader (volume and label patches) fed to the network. Before running it, the .txt files with the list
 of samples used for the training must be created (--Create_training_test_dataset from the command line of the main.py script)'''
 
 parser = argparse.ArgumentParser()
