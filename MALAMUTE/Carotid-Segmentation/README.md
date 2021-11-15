@@ -40,6 +40,6 @@ Sample images: the following images show the segmentation of carotid artery from
 ### Sample script inference
 - The label can be omitted (None) if you segment an unknown image. You have to add the --resolution if you resampled the data during training (look at the argsparse in the code).
 ```console
-python predict_single_image.py --image './Data_folder/image.nii' --label './Data_folder/label.nii' --result './Data_folder/prova.nii' --weights './best_metric_model.pth'
+python predict_single_image.py --image 'image0.nii' --label 'label.nii' --result 'result0.nii' --weights './best_metric_model.pth'
 ```
 *******************************************************************************
