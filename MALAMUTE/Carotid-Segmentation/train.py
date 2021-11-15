@@ -11,8 +11,8 @@
 
 
 from init import Options
-from networks import *
-from networks import build_net
+from networks import build_net, update_learning_rate, build_UNETR
+# from networks import build_net
 import logging
 import os
 import sys
@@ -26,21 +26,21 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 import monai
-from monai.data import create_test_image_3d, list_data_collate
+from monai.data import create_test_image_3d, list_data_collate, decollate_batch
 from monai.inferers import sliding_window_inference
 from monai.metrics import DiceMetric
-from monai.transforms import (Compose, LoadNiftid, AddChanneld, Transpose,
-                              ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined,
-    Spacingd, Orientationd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
+from monai.transforms import (EnsureType, Compose, LoadImaged, AddChanneld, Transpose,Activations,AsDiscrete, RandGaussianSmoothd, CropForegroundd, SpatialPadd,
+                              ScaleIntensityd, ToTensord, RandSpatialCropd, Rand3DElasticd, RandAffined, RandZoomd,
+    Spacingd, Orientationd, Resized, ThresholdIntensityd, RandShiftIntensityd, BorderPadd, RandGaussianNoised, RandAdjustContrastd,NormalizeIntensityd,RandFlipd)
 
 from monai.visualize import plot_2d_or_3d_image
-from monai.engines import get_devices_spec
 
 def main():
     opt = Options().parse()
     # monai.config.print_config()
     logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+    # check gpus
     if opt.gpu_ids != '-1':
         num_gpus = len(opt.gpu_ids.split(','))
     else:
@@ -48,7 +48,6 @@ def main():
     print('number of GPU:', num_gpus)
 
     # Data loader creation
-
     # train images
     train_images = sorted(glob(os.path.join(opt.images_folder, 'train', 'image*.nii')))
     train_segs = sorted(glob(os.path.join(opt.labels_folder, 'train', 'label*.nii')))
@@ -66,7 +65,7 @@ def main():
 
     # augment the data list for training
     for i in range(int(opt.increase_factor_data)):
-
+    
         train_images.extend(train_images)
         train_segs.extend(train_segs)
 
@@ -93,14 +92,19 @@ def main():
 
     if opt.resolution is not None:
         train_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            NormalizeIntensityd(keys=['image']),
-            ScaleIntensityd(keys=['image']),
-            Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),  # CT HU filter
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
+
+            NormalizeIntensityd(keys=['image']),                                          # augmentation
+            ScaleIntensityd(keys=['image']),                                              # intensity
+            Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),  # resolution
+
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 36, np.pi / 36, np.pi * 2), padding_mode="zeros"),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
@@ -110,30 +114,44 @@ def main():
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                            sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.15, 0.15, 0.15),
                            padding_mode="zeros"),
+            RandGaussianSmoothd(keys=["image"], sigma_x=(0.5, 1.15), sigma_y=(0.5, 1.15), sigma_z=(0.5, 1.15), prob=0.1,),
             RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.5), prob=0.1),
-            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
+            RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 15)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
+
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
 
         val_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            NormalizeIntensityd(keys=['image']),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
+
+            NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
-            Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),
+            Spacingd(keys=['image', 'label'], pixdim=opt.resolution, mode=('bilinear', 'nearest')),  # resolution
+
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             ToTensord(keys=['image', 'label'])
         ]
     else:
         train_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            NormalizeIntensityd(keys=['image']),
-            ScaleIntensityd(keys=['image']),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=1),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=0),
-            RandFlipd(keys=['image', 'label'], prob=0.1, spatial_axis=2),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            CropForegroundd(keys=['image', 'label'], source_key='image'),               # crop CropForeground
+
+            NormalizeIntensityd(keys=['image']),                                          # augmentation
+            ScaleIntensityd(keys=['image']),                                              # intensity
+
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=1),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=0),
+            RandFlipd(keys=['image', 'label'], prob=0.15, spatial_axis=2),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 36, np.pi / 36, np.pi * 2), padding_mode="zeros"),
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
@@ -141,19 +159,29 @@ def main():
             RandAffined(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
                         rotate_range=(np.pi / 2, np.pi / 36, np.pi / 36), padding_mode="zeros"),
             Rand3DElasticd(keys=['image', 'label'], mode=('bilinear', 'nearest'), prob=0.1,
-                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.15, 0.15, 0.15), padding_mode="zeros"),
-            RandAdjustContrastd(keys=['image'],  gamma=(0.5, 2.5), prob=0.1),
+                           sigma_range=(5, 8), magnitude_range=(100, 200), scale_range=(0.15, 0.15, 0.15),
+                           padding_mode="zeros"),
+            RandGaussianSmoothd(keys=["image"], sigma_x=(0.5, 1.15), sigma_y=(0.5, 1.15), sigma_z=(0.5, 1.15), prob=0.1,),
+            RandAdjustContrastd(keys=['image'], gamma=(0.5, 2.5), prob=0.1),
             RandGaussianNoised(keys=['image'], prob=0.1, mean=np.random.uniform(0, 0.5), std=np.random.uniform(0, 1)),
             RandShiftIntensityd(keys=['image'], offsets=np.random.uniform(0,0.3), prob=0.1),
+
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             RandSpatialCropd(keys=['image', 'label'], roi_size=opt.patch_size, random_size=False),
             ToTensord(keys=['image', 'label'])
         ]
 
         val_transforms = [
-            LoadNiftid(keys=['image', 'label']),
+            LoadImaged(keys=['image', 'label']),
             AddChanneld(keys=['image', 'label']),
-            NormalizeIntensityd(keys=['image']),
+            # ThresholdIntensityd(keys=['image'], threshold=-135, above=True, cval=-135),
+            # ThresholdIntensityd(keys=['image'], threshold=215, above=False, cval=215),
+            CropForegroundd(keys=['image', 'label'], source_key='image'),                   # crop CropForeground
+
+            NormalizeIntensityd(keys=['image']),                                      # intensity
             ScaleIntensityd(keys=['image']),
+
+            SpatialPadd(keys=['image', 'label'], spatial_size=opt.patch_size, method= 'end'),  # pad if the image is smaller than patch
             ToTensord(keys=['image', 'label'])
         ]
 
@@ -162,25 +190,25 @@ def main():
 
     # create a training data loader
     check_train = monai.data.Dataset(data=train_dicts, transform=train_transforms)
-    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    train_loader = DataLoader(check_train, batch_size=opt.batch_size, shuffle=True, collate_fn=list_data_collate, num_workers=opt.workers, pin_memory=False)
 
     # create a training_dice data loader
     check_val = monai.data.Dataset(data=train_dice_dicts, transform=val_transforms)
-    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    train_dice_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=val_dicts, transform=val_transforms)
-    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
+    val_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
 
     # create a validation data loader
     check_val = monai.data.Dataset(data=test_dicts, transform=val_transforms)
-    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, pin_memory=torch.cuda.is_available())
-
-    # try to use all the available GPUs
-    devices = get_devices_spec(None)
+    test_loader = DataLoader(check_val, batch_size=1, num_workers=opt.workers, collate_fn=list_data_collate, pin_memory=False)
 
     # build the network
-    net = build_net()
+    if opt.network is 'nnunet':
+        net = build_net()  # nn build_net
+    elif opt.network is 'unetr':
+        net = build_UNETR() # UneTR
     net.cuda()
 
     if num_gpus > 1:
@@ -189,20 +217,27 @@ def main():
     if opt.preload is not None:
         net.load_state_dict(torch.load(opt.preload))
 
-    dice_metric = DiceMetric(include_background=True, to_onehot_y=False, sigmoid=True, reduction="mean")
+    dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False)
+    post_trans = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold_values=True)])
 
-    # loss_function = monai.losses.DiceLoss(sigmoid=True)
-    loss_function = monai.losses.TverskyLoss(sigmoid=True, alpha=0.3, beta=0.7)
+    loss_function = monai.losses.DiceCELoss(sigmoid=True)
+    torch.backends.cudnn.benchmark = opt.benchmark
 
-    optim = torch.optim.Adam(net.parameters(), lr=opt.lr)
-    net_scheduler = get_scheduler(optim, opt)
+
+    if opt.network is 'nnunet':
+
+        optim = torch.optim.SGD(net.parameters(), lr=opt.lr, momentum=0.99, weight_decay=3e-5, nesterov=True,)
+        net_scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda epoch: (1 - epoch / opt.epochs) ** 0.9)
+
+    elif opt.network is 'unetr':
+
+        optim = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-5)
 
     # start a typical PyTorch training
     val_interval = 1
     best_metric = -1
     best_metric_epoch = -1
     epoch_loss_values = list()
-    metric_values = list()
     writer = SummaryWriter()
     for epoch in range(opt.epochs):
         print("-" * 10)
@@ -225,7 +260,8 @@ def main():
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
         print(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
-        update_learning_rate(net_scheduler, optim)
+        if opt.network is 'nnunet':
+            update_learning_rate(net_scheduler, optim)
 
         if (epoch + 1) % val_interval == 0:
             net.eval()
@@ -233,8 +269,6 @@ def main():
 
                 def plot_dice(images_loader):
 
-                    metric_sum = 0.0
-                    metric_count = 0
                     val_images = None
                     val_labels = None
                     val_outputs = None
@@ -243,11 +277,14 @@ def main():
                         roi_size = opt.patch_size
                         sw_batch_size = 4
                         val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
-                        value = dice_metric(y_pred=val_outputs, y=val_labels)
-                        metric_count += len(value)
-                        metric_sum += value.item() * len(value)
-                    metric = metric_sum / metric_count
-                    metric_values.append(metric)
+                        val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
+                        dice_metric(y_pred=val_outputs, y=val_labels)
+
+                    # aggregate the final mean dice result
+                    metric = dice_metric.aggregate().item()
+                    # reset the status for next validation round
+                    dice_metric.reset()
+
                     return metric, val_images, val_labels, val_outputs
 
                 metric, val_images, val_labels, val_outputs = plot_dice(val_loader)
@@ -274,10 +311,13 @@ def main():
                 writer.add_scalar("Training_dice", metric_train, epoch + 1)
                 writer.add_scalar("Validation_dice", metric, epoch + 1)
                 # plot the last model output as GIF image in TensorBoard with the corresponding image and label
-                val_outputs = (val_outputs.sigmoid() >= 0.5).float()
+                # val_outputs = (val_outputs.sigmoid() >= 0.5).float()
                 plot_2d_or_3d_image(val_images, epoch + 1, writer, index=0, tag="validation image")
                 plot_2d_or_3d_image(val_labels, epoch + 1, writer, index=0, tag="validation label")
                 plot_2d_or_3d_image(val_outputs, epoch + 1, writer, index=0, tag="validation inference")
+                plot_2d_or_3d_image(test_images, epoch + 1, writer, index=0, tag="test image")
+                plot_2d_or_3d_image(test_labels, epoch + 1, writer, index=0, tag="test label")
+                plot_2d_or_3d_image(test_outputs, epoch + 1, writer, index=0, tag="test inference")
 
     print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
     writer.close()

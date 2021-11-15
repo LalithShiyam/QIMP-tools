@@ -2,41 +2,21 @@ import os
 import re
 import argparse
 import SimpleITK as sitk
+import numpy as np
 import random
+from utils import *
 
-
-def numericalSort(value):
-    numbers = re.compile(r'(\d+)')
-    parts = numbers.split(value)
-    parts[1::2] = map(int, parts[1::2])
-    return parts
-
-
-def lstFiles(Path):
-
-    images_list = []  # create an empty list, the raw image data files is stored here
-    for dirName, subdirList, fileList in os.walk(Path):
-        for filename in fileList:
-            if ".nii.gz" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-            elif ".nii" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-            elif ".mhd" in filename.lower():
-                images_list.append(os.path.join(dirName, filename))
-
-    images_list = sorted(images_list, key=numericalSort)
-
-    return images_list
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--images', default='./Data_folder/imagesTr', help='path to the images')
-parser.add_argument('--labels', default='./Data_folder/labelsTr', help='path to the labels')
-parser.add_argument('--split_val', default=3, help='number of images for validation')
-parser.add_argument('--split_test', default=1, help='number of images for testing')
-args = parser.parse_args()
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--images', default='./Data_folder/imagesTr', help='path to the images')
+    parser.add_argument('--labels', default='./Data_folder/labelsTr', help='path to the labels')
+    parser.add_argument('--split_val', default=4, help='number of images for validation')
+    parser.add_argument('--split_test', default=3, help='number of images for testing')
+    parser.add_argument('--resolution', default=[1.35, 1.35, 1.35], help='New Resolution to resample the data to same spacing')
+    parser.add_argument('--smooth', default=False, help='Set True if you want to smooth a bit the binary mask')
+    args = parser.parse_args()
 
     list_images = lstFiles(args.images)
     list_labels = lstFiles(args.labels)
@@ -76,10 +56,15 @@ if __name__ == "__main__":
         a = list_images[int(args.split_test + args.split_val)+i]
         b = list_labels[int(args.split_test + args.split_val)+i]
 
-        print(a)
+        print('train',i, a,b)
 
         label = sitk.ReadImage(b)
         image = sitk.ReadImage(a)
+
+        image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear', fill_value=0)
+        image, label = uniform_img_dimensions(image, label, nearest=True)
+        if args.smooth is True:
+            label = gaussian2(label)
 
         image_directory = os.path.join('./Data_folder/images/train', f"image{i:d}.nii")
         label_directory = os.path.join('./Data_folder/labels/train', f"label{i:d}.nii")
@@ -92,10 +77,15 @@ if __name__ == "__main__":
         a = list_images[int(args.split_test)+i]
         b = list_labels[int(args.split_test)+i]
 
-        print(a)
+        print('val',i, a,b)
 
         label = sitk.ReadImage(b)
         image = sitk.ReadImage(a)
+
+        image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear', fill_value=0)
+        image, label = uniform_img_dimensions(image, label, nearest=True)
+        if args.smooth is True:
+            label = gaussian2(label)
 
         image_directory = os.path.join('./Data_folder/images/val', f"image{i:d}.nii")
         label_directory = os.path.join('./Data_folder/labels/val', f"label{i:d}.nii")
@@ -108,10 +98,15 @@ if __name__ == "__main__":
         a = list_images[i]
         b = list_labels[i]
 
-        print(a)
+        print('test',i,a,b)
 
         label = sitk.ReadImage(b)
         image = sitk.ReadImage(a)
+
+        image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear', fill_value=0)
+        image, label = uniform_img_dimensions(image, label, nearest=True)
+        if args.smooth is True:
+            label = gaussian2(label)
 
         image_directory = os.path.join('./Data_folder/images/test', f"image{i:d}.nii")
         label_directory = os.path.join('./Data_folder/labels/test', f"label{i:d}.nii")
