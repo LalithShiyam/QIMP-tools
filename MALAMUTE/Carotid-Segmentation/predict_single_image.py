@@ -129,13 +129,13 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
 
         if label is None:
             for val_data in val_loader:
-                val_images = val_data["image"].cuda()
+                val_images = val_data["image"].to(device)
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
                 val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
 
         else:
             for val_data in val_loader:
-                val_images, val_labels = val_data["image"].cuda(), val_data["label"].cuda()
+                val_images, val_labels = val_data["image"].to(device), val_data["label"].to(device)
                 val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, net)
                 val_outputs = [post_trans(i) for i in decollate_batch(val_outputs)]
                 dice_metric(y_pred=val_outputs, y=val_labels)
@@ -196,14 +196,14 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", type=str, default='image0.nii', help='source image' )
-    parser.add_argument("--label", type=str, default='label0.nii', help='source label, if you want to compute dice. None for new case')
-    parser.add_argument("--result", type=str, default='test_0.nii', help='path to the .nii result to save')
+    parser.add_argument("--image", type=str, default='image.nii', help='source image' )
+    parser.add_argument("--label", type=str, default=None, help='source label, if you want to compute dice. None for new case')
+    parser.add_argument("--result", type=str, default='result.nii', help='path to the .nii result to save')
     parser.add_argument("--weights", type=str, default='./best_metric_model.pth', help='network weights to load')
     parser.add_argument("--resolution", default=[1.35, 1.35, 1.35], help='Resolution used in training phase')
-    parser.add_argument("--patch_size", type=int, nargs=3, default=(128, 128, 128), help="Input dimension for the generator, same of training")
+    parser.add_argument("--patch_size", type=int, nargs=3, default=(128,128,128), help="Input dimension for the generator, same of training")
     parser.add_argument('--network', default='nnunet', help='nnunet, unetr')
-    parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+    parser.add_argument('--gpu_ids', type=str, default='-1', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     args = parser.parse_args()
 
     segment(args.image, args.label, args.result, args.weights, args.resolution, args.patch_size, args.network, args.gpu_ids)
