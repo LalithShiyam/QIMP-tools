@@ -105,9 +105,9 @@ def segment(image, label, result, weights, resolution, patch_size, network, gpu_
         device = torch.device("cpu")
 
     # build the network
-    if network is 'nnunet':
+    if network == 'nnunet':
         net = build_net()  # nn build_net
-    elif network is 'unetr':
+    elif network == 'unetr':
         net = build_UNETR() # UneTR
 
     net = net.to(device)
